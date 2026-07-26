@@ -9,7 +9,7 @@
 # ✅ Current Status
 
 - [x] Landing Page
-- [x] Basic Sign Up Page
+- [x] Expanded Sign Up Form (all fields + fancy inputs)
 - [x] General Emotion Radiograph (5 emotions)
 
 ---
@@ -19,48 +19,48 @@
 ## 1. Expanded Sign Up Form
 
 ### Personal Information
-- [ ] Full Name
-- [ ] Username
-- [ ] Email
-- [ ] Phone Number
-- [ ] Date of Birth
-- [ ] Age (auto/manual)
-- [ ] Gender
-- [ ] Country
-- [ ] City
+- [x] Full Name
+- [x] Username
+- [x] Email
+- [x] Phone Number
+- [x] Date of Birth
+- [x] Age (auto/manual)
+- [x] Gender
+- [x] Country
+- [x] City
 
 ### Academic / Occupation
-- [ ] Student / Professional
-- [ ] School / University / Workplace
-- [ ] Education Level
+- [x] Student / Professional
+- [x] School / University / Workplace
+- [x] Education Level
 
 ### Mental Health Related
-- [ ] Sleep Hours
-- [ ] Exercise Frequency
-- [ ] Screen Time
-- [ ] Daily Social Interaction
-- [ ] Stress Level (Slider)
-- [ ] Mood Selection
-- [ ] Existing Mental Health History
-- [ ] Family Mental Health History
-- [ ] Hobbies
-- [ ] Favorite Activity
+- [x] Sleep Hours
+- [x] Exercise Frequency
+- [x] Screen Time
+- [x] Daily Social Interaction
+- [x] Stress Level (Slider)
+- [x] Mood Selection
+- [x] Existing Mental Health History
+- [x] Family Mental Health History
+- [x] Hobbies
+- [x] Favorite Activity
 
 ### Security
-- [ ] Password
-- [ ] Confirm Password
-- [ ] Terms & Conditions
-- [ ] Privacy Policy Checkbox
+- [x] Password
+- [x] Confirm Password
+- [x] Terms & Conditions
+- [x] Privacy Policy Checkbox
 
 ### Fancy Inputs
-- [ ] Range Slider
-- [ ] Date Picker
-- [ ] Toggle Switches
-- [ ] Multiple Checkboxes
-- [ ] Radio Buttons
-- [ ] Dropdown Menus
-- [ ] Emoji Mood Picker
-- [ ] Progress Bar while filling form
+- [x] Range Slider
+- [x] Date Picker
+- [x] Toggle Switches
+- [x] Multiple Checkboxes
+- [x] Radio Buttons
+- [x] Dropdown Menus
+- [x] Emoji Mood Picker
+- [x] Progress Bar while filling form
 
 ---
 
@@ -217,7 +217,7 @@ Depending on detected emotion:
 - [ ] Achievement Badges
 - [ ] Streak Counter
 - [ ] Notification System
-- [ ] Dark / Light Theme
+- [x] Dark / Light Theme
 - [ ] Sound Effects
 - [ ] Background Music Toggle
 
@@ -225,7 +225,7 @@ Depending on detected emotion:
 
 # 📋 Presentation Flow
 
-- [ ] Sign Up
+- [x] Sign Up
 - [ ] Login
 - [ ] Dashboard
 - [ ] Complete Activities
