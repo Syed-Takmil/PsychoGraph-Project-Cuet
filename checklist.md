@@ -9,8 +9,12 @@
 # ✅ Current Status
 
 - [x] Landing Page
-- [x] Expanded Sign Up Form (all fields + fancy inputs)
+- [x] Expanded Sign Up Form (all fields + fancy inputs + animated border)
 - [x] General Emotion Radiograph (5 emotions)
+- [x] Activity 1: Emotion Stroop Test
+- [x] Activity 3: Reaction Time Test (false start penalty, SD stats)
+- [x] Activity 7: Visual Preference Test (radar chart, flip animation)
+- [x] Navbar with 8 nav links + dark/light theme toggle
 
 ---
 
@@ -67,9 +71,9 @@
 # 🧠 Concurrent User Activities
 
 ## Activity 1 - Emotion Stroop Test
-- [ ] Color-word matching
-- [ ] Measure response time
-- [ ] Display score
+- [x] Color-word matching
+- [x] Measure response time
+- [x] Display score
 
 ---
 
@@ -81,9 +85,9 @@
 ---
 
 ## Activity 3 - Reaction Time Test
-- [ ] Wait for green screen
-- [ ] Click as fast as possible
-- [ ] Average reaction time
+- [x] Wait for green screen
+- [x] Click as fast as possible
+- [x] Average reaction time
 
 ---
 
@@ -109,10 +113,10 @@
 ---
 
 ## Activity 7 - Visual Preference Test
-- [ ] Choose calming images
-- [ ] Choose colors
-- [ ] Choose environments
-- [ ] Simple personality summary
+- [x] Choose calming images
+- [x] Choose colors
+- [x] Choose environments
+- [x] Simple personality summary
 
 ---
 
@@ -174,17 +178,17 @@ Depending on detected emotion:
 ---
 
 ## Activity Pages
-- [ ] Glassmorphism UI
-- [ ] Animated Cards
-- [ ] Progress Indicator
+- [x] Glassmorphism UI
+- [x] Animated Cards
+- [x] Progress Indicator
 - [ ] Loading Animation
 - [ ] Success Animation
 
 ---
 
 ## Dashboard
-- [ ] Charts
-- [ ] Cards
+- [x] Charts
+- [x] Cards
 - [ ] Animated Counters
 
 ---
@@ -228,7 +232,7 @@ Depending on detected emotion:
 - [x] Sign Up
 - [ ] Login
 - [ ] Dashboard
-- [ ] Complete Activities
+- [x] Complete Activities
 - [ ] Emotion Analysis
 - [ ] Personalized Recommendations
 - [ ] Emotion History
@@ -252,12 +256,12 @@ Depending on detected emotion:
 # Final Demo Checklist
 
 - [ ] Attractive Landing Page
-- [ ] Large Feature-Rich Sign Up Form
-- [ ] 5–7 Interactive Activities
+- [x] Large Feature-Rich Sign Up Form
+- [x] 5–7 Interactive Activities
 - [ ] Emotion Analysis Dashboard
 - [ ] Personalized Recommendations
 - [ ] Progress Charts
-- [ ] Modern UI
+- [x] Modern UI
 - [ ] Optional Three.js Background
 - [ ] Smooth Animations
 - [ ] End-to-End User Flow
