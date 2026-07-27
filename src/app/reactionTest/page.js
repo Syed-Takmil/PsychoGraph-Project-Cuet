@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import RequireAuth from '@/components/RequireAuth'
+import NextActivity from '@/components/NextActivity'
+import { markCompleted } from '@/lib/activityProgress'
 
 const TOTAL_ATTEMPTS = 5
 
@@ -8,13 +11,17 @@ function randomDelay() {
   return Math.floor(Math.random() * 3000) + 2500
 }
 
-export default function AdvancedReactionTest() {
+function AdvancedReactionTest() {
   const [gameState, setGameState] = useState('start')
   const [currentAttempt, setCurrentAttempt] = useState(1)
   const [startTime, setStartTime] = useState(null)
   const [reactionTimes, setReactionTimes] = useState([])
   const [falseStarts, setFalseStarts] = useState(0)
   const [lastTime, setLastTime] = useState(null)
+
+  useEffect(() => {
+    if (gameState === 'complete') markCompleted('/reactionTest')
+  }, [gameState])
 
   const timeoutRef = useRef(null)
 
@@ -200,10 +207,17 @@ export default function AdvancedReactionTest() {
             >
               Retest Activity
             </button>
+            <div className="mt-4">
+              <NextActivity currentPath="/reactionTest" />
+            </div>
           </div>
         )}
 
       </div>
     </div>
   )
+}
+
+export default function ReactionTestPage() {
+  return <RequireAuth><AdvancedReactionTest /></RequireAuth>
 }

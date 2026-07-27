@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import ThemeToggle from "@/components/ThemeToggle";
+import { AuthProvider } from "@/context/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,25 +25,12 @@ export default function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(){
-                try {
-                  var t = localStorage.getItem("theme");
-                  var d = t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
-                  if (d) document.documentElement.classList.add("dark");
-                } catch(e){}
-              })();
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
-        <ThemeToggle />
+        <AuthProvider>
+          <Navbar />
+          <main className="flex-1 flex flex-col">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

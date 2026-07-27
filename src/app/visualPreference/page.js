@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import RequireAuth from '@/components/RequireAuth'
+import NextActivity from '@/components/NextActivity'
+import { markCompleted } from '@/lib/activityProgress'
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -18,7 +21,7 @@ const EMOTION_DIMENSIONS = {
   HAPPY: { key: 'Happy', index: 0, color: 'rgba(255, 206, 86, 0.6)' },
   CALM: { key: 'Calm', index: 1, color: 'rgba(75, 192, 192, 0.6)' },
   SAD: { key: 'Sad', index: 2, color: 'rgba(54, 162, 235, 0.6)' },
-  STRESSED: { key: 'Stressed', index: 3, color: 'rgba(255, 99, 132, 0.6)' },
+  NEUTRAL: { key: 'Neutral', index: 3, color: 'rgba(148, 163, 184, 0.6)' },
   ANGRY: { key: 'Angry', index: 4, color: 'rgba(255, 159, 64, 0.6)' },
 }
 
@@ -28,7 +31,7 @@ const BG_COLORS = Object.values(EMOTION_DIMENSIONS).map((d) => d.color)
 const MAX_SELECTIONS = 9
 const GRID_SIZE = 12
 
-const EMOTION_TYPES = ['happy', 'calm', 'sad', 'stressed', 'angry']
+const EMOTION_TYPES = ['neutral', 'happy', 'calm', 'sad', 'angry']
 
 const IMAGE_LIBRARY = EMOTION_TYPES.flatMap((emotion, ei) =>
   Array.from({ length: 10 }, (_, i) => ({
@@ -48,7 +51,7 @@ function shuffle(arr) {
   return a
 }
 
-export default function VisualPreferenceTest() {
+function VisualPreferenceTest() {
   const [gameState, setGameState] = useState('start')
   const [emotionTally, setEmotionTally] = useState(
     Object.fromEntries(LABELS.map((key) => [key, 0]))
@@ -60,6 +63,10 @@ export default function VisualPreferenceTest() {
   const [flippingId, setFlippingId] = useState(null)
   const [replacementImg, setReplacementImg] = useState(null)
   const timerRef = useRef(null)
+
+  useEffect(() => {
+    if (gameState === 'complete') markCompleted('/visualPreference')
+  }, [gameState])
 
   const beginTest = () => {
     const s = shuffle(IMAGE_LIBRARY)
@@ -160,15 +167,12 @@ export default function VisualPreferenceTest() {
       current[1] > max[1] ? current : max, ['', 0]
     )
 
-    const isNegative = ['Stressed', 'Angry', 'Sad'].includes(dominant[0])
+    const isNegative = ['Angry', 'Sad'].includes(dominant[0])
     const score = dominant[1]
 
     let recommendation = 'Maintain your current positive habits.'
     if (score >= 3 && dominant[0] === 'Sad')
       recommendation = 'You selected several low-valence images. Consider engaging in an uplifting activity or connecting with a friend.'
-    if (score >= 3 && dominant[0] === 'Stressed')
-      recommendation = 'High stress indicators present. We recommend trying the guided breathing exercise.'
-
     return { dominant: dominant[0], score, recommendation, isNegative }
   }, [gameState, emotionTally])
 
@@ -309,6 +313,9 @@ export default function VisualPreferenceTest() {
               >
                 Retake Test
               </button>
+              <div className="mt-4">
+                <NextActivity currentPath="/visualPreference" />
+              </div>
             </div>
           )}
         </div>
@@ -316,4 +323,8 @@ export default function VisualPreferenceTest() {
       </div>
     </div>
   )
+}
+
+export default function VisualPreferencePage() {
+  return <RequireAuth><VisualPreferenceTest /></RequireAuth>
 }

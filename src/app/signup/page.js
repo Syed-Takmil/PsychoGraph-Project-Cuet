@@ -1,16 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Dialog from '@/components/Dialog'
+import { useAuth } from '@/context/AuthContext'
 
 const moods = [
+  { emoji: '😐', label: 'Neutral' },
   { emoji: '😊', label: 'Happy' },
   { emoji: '😌', label: 'Calm' },
   { emoji: '😢', label: 'Sad' },
-  { emoji: '😰', label: 'Stressed' },
   { emoji: '😠', label: 'Angry' },
-  { emoji: '😟', label: 'Anxious' },
-  { emoji: '🤩', label: 'Excited' },
-  { emoji: '😴', label: 'Tired' },
 ]
 
 const hobbiesList = [
@@ -48,8 +48,18 @@ const initialForm = {
 }
 
 export default function SignUpPage() {
+  const router = useRouter()
+  const { login } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState({ text: '', type: '' })
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
+
+  useEffect(() => {
+    if (!message.text) return
+    const timer = setTimeout(() => setMessage({ text: '', type: '' }), 4000)
+    return () => clearTimeout(timer)
+  }, [message.text])
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -81,21 +91,25 @@ export default function SignUpPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     if (form.password && form.confirmPassword && form.password !== form.confirmPassword) {
       setMessage({ text: 'Passwords do not match', type: 'error' })
       return
     }
-    if (form.username === 'admin' && form.password === 'admin') {
-      setMessage({ text: 'Login successful! Redirecting to dashboard...', type: 'success' })
-    } else {
-      setMessage({ text: 'Invalid username or password. Try admin/admin.', type: 'error' })
+    if (!form.termsAccepted || !form.privacyAccepted) {
+      setMessage({ text: 'You must accept the Terms & Conditions and Privacy Policy.', type: 'error' })
+      return
     }
+    login()
+    setMessage({ text: 'Account created! Redirecting...', type: 'success' })
+    setTimeout(() => router.push('/clickAccuracy'), 1000)
   }
 
   const inputClass = 'w-full p-3 rounded-xl border border-purple-200 dark:border-purple-800 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400'
   const labelClass = 'block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1'
 
   return (
+    <>
     <div className="flex-1 flex items-center justify-center p-4 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-purple-950 dark:to-gray-900">
       <div className="relative w-full max-w-4xl rounded-3xl p-[3px] overflow-hidden"
         style={{
@@ -327,7 +341,7 @@ export default function SignUpPage() {
               </div>
 
               <div className="mt-6 space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setShowTerms(true)}>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                     form.termsAccepted
                       ? 'bg-purple-500 border-purple-500'
@@ -337,10 +351,9 @@ export default function SignUpPage() {
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                     )}
                   </div>
-                  <input type="checkbox" name="termsAccepted" checked={form.termsAccepted} onChange={handleChange} className="hidden" />
-                  <span className="text-gray-600 dark:text-gray-300">I agree to the <span className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer">Terms &amp; Conditions</span></span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer group">
+                  <span className="text-gray-600 dark:text-gray-300">I agree to the <span className="text-purple-600 dark:text-purple-400 hover:underline">Terms &amp; Conditions</span></span>
+                </div>
+                <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setShowPrivacy(true)}>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                     form.privacyAccepted
                       ? 'bg-purple-500 border-purple-500'
@@ -350,9 +363,8 @@ export default function SignUpPage() {
                       <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                     )}
                   </div>
-                  <input type="checkbox" name="privacyAccepted" checked={form.privacyAccepted} onChange={handleChange} className="hidden" />
-                  <span className="text-gray-600 dark:text-gray-300">I agree to the <span className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer">Privacy Policy</span></span>
-                </label>
+                  <span className="text-gray-600 dark:text-gray-300">I agree to the <span className="text-purple-600 dark:text-purple-400 hover:underline">Privacy Policy</span></span>
+                </div>
               </div>
             </section>
 
@@ -366,17 +378,55 @@ export default function SignUpPage() {
             </div>
 
             {message.text && (
-              <div className={`text-center text-base font-medium p-4 rounded-xl ${
+              <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-4 rounded-xl shadow-2xl border text-base font-medium transition-all animate-[fadeIn_0.3s_ease-out] ${
                 message.type === 'success'
-                  ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800'
-                  : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800'
+                  ? 'bg-green-100 dark:bg-green-900/70 text-green-700 dark:text-green-300 border-green-300 dark:border-green-700'
+                  : 'bg-red-100 dark:bg-red-900/70 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
               }`}>
-                {message.text}
+                <span className="flex-1">{message.text}</span>
+                <button onClick={() => setMessage({ text: '', type: '' })} className="shrink-0 p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
               </div>
             )}
           </form>
         </div>
       </div>
     </div>
+
+      <Dialog open={showTerms} onClose={() => setShowTerms(false)} onAccept={() => setForm((prev) => ({ ...prev, termsAccepted: true }))} title="Terms &amp; Conditions">
+        <p>By accessing or using the Psychograph platform, you agree to be bound by these Terms and Conditions. If you do not agree, please do not use our services.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">1. Account Registration</h3>
+        <p>You must provide accurate, current, and complete information during registration. You are responsible for maintaining the confidentiality of your login credentials and for all activities under your account.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">2. Use of Service</h3>
+        <p>Psychograph provides behavioral assessment tools for informational and educational purposes only. Our assessments are not diagnostic instruments and should not replace professional medical or psychological advice.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">3. User Conduct</h3>
+        <p>You agree not to misuse the platform, interfere with its operation, or attempt to access data不属于 you. Any automated scraping, reverse engineering, or abusive usage is strictly prohibited.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">4. Intellectual Property</h3>
+        <p>All content, trademarks, and proprietary technology within Psychograph are owned by or licensed to us. You may not reproduce, distribute, or create derivative works without explicit written consent.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">5. Limitation of Liability</h3>
+        <p>Psychograph is provided &quot;as is&quot; without warranties of any kind. We shall not be liable for any damages arising from your use of the platform or reliance on assessment results.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">6. Changes</h3>
+        <p>We reserve the right to update these terms at any time. Continued use after changes constitutes acceptance of the revised terms.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">7. Contact</h3>
+        <p>For questions regarding these terms, please reach out to our support team through the platform.</p>
+      </Dialog>
+
+      <Dialog open={showPrivacy} onClose={() => setShowPrivacy(false)} onAccept={() => setForm((prev) => ({ ...prev, privacyAccepted: true }))} title="Privacy Policy">
+        <p>Your privacy is important to us. This policy outlines how Psychograph collects, uses, and protects your personal information.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">1. Information We Collect</h3>
+        <p>We collect information you provide during registration, including name, email address, age range, and optional demographic data. We also collect behavioral interaction data generated during platform activities, such as response times, click patterns, and visual preferences.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">2. How We Use Your Information</h3>
+        <p>Your data is used to generate personalized assessment insights, improve platform functionality, and conduct anonymized research. We do not sell your personal information to third parties.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">3. Data Storage &amp; Security</h3>
+        <p>We implement industry-standard encryption and access controls to protect your data. Your information is stored securely and retained only as long as necessary to provide our services.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">4. Your Rights</h3>
+        <p>You may request access to, correction of, or deletion of your personal data at any time. You can also withdraw consent for data processing by contacting us.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">5. Cookies</h3>
+        <p>We use essential cookies for authentication and platform functionality. Analytics cookies may be used to improve user experience; you can opt out through your browser settings.</p>
+        <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">6. Contact</h3>
+        <p>For privacy-related inquiries, please contact our data protection team through the platform.</p>
+      </Dialog>
+    </>
   )
 }

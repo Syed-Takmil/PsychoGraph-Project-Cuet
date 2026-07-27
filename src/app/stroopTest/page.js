@@ -1,6 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import RequireAuth from '@/components/RequireAuth'
+import NextActivity from '@/components/NextActivity'
+import { markCompleted } from '@/lib/activityProgress'
 
 const COLORS = [
   { name: 'RED', hex: '#e74c3c', key: 'red' },
@@ -21,8 +24,12 @@ function pickRandom() {
   return { randomWord, randomColor }
 }
 
-export default function EmotionStroopTest() {
+function EmotionStroopTest() {
   const [gameState, setGameState] = useState('start')
+
+  useEffect(() => {
+    if (gameState === 'results') markCompleted('/stroopTest')
+  }, [gameState])
   const [currentRound, setCurrentRound] = useState(1)
   const [score, setScore] = useState(0)
   const [responseTimes, setResponseTimes] = useState([])
@@ -138,10 +145,17 @@ export default function EmotionStroopTest() {
             >
               Try Again
             </button>
+            <div className="mt-4">
+              <NextActivity currentPath="/stroopTest" />
+            </div>
           </div>
         )}
 
       </div>
     </div>
   )
+}
+
+export default function StroopTestPage() {
+  return <RequireAuth><EmotionStroopTest /></RequireAuth>
 }

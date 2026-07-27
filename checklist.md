@@ -12,9 +12,13 @@
 - [x] Expanded Sign Up Form (all fields + fancy inputs + animated border)
 - [x] General Emotion Radiograph (5 emotions)
 - [x] Activity 1: Emotion Stroop Test
+- [x] Activity 2: Memory Card Game
 - [x] Activity 3: Reaction Time Test (false start penalty, SD stats)
+- [x] Activity 4: Click Accuracy Challenge
+- [x] Activity 5: Pattern Memory Test
+- [x] Activity 6: Mood Questionnaire
 - [x] Activity 7: Visual Preference Test (radar chart, flip animation)
-- [x] Navbar with 8 nav links + dark/light theme toggle
+- [x] Navbar with all activity links + auth + dark/light theme toggle
 
 ---
 
@@ -106,9 +110,9 @@
 ---
 
 ## Activity 6 - Mood Questionnaire
-- [ ] 10–20 quick questions
-- [ ] Likert Scale (1–5)
-- [ ] Instant score
+- [x] 10–20 quick questions
+- [x] Likert Scale (1–5)
+- [x] Instant score
 
 ---
 
