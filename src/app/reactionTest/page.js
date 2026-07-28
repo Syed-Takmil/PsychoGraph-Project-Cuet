@@ -11,7 +11,7 @@ function randomDelay() {
   return Math.floor(Math.random() * 3000) + 2500
 }
 
-function AdvancedReactionTest() {
+export default function AdvancedReactionTest() {
   const [gameState, setGameState] = useState('start')
   const [currentAttempt, setCurrentAttempt] = useState(1)
   const [startTime, setStartTime] = useState(null)
@@ -218,6 +218,3 @@ function AdvancedReactionTest() {
   )
 }
 
-export default function ReactionTestPage() {
-  return <RequireAuth><AdvancedReactionTest /></RequireAuth>
-}

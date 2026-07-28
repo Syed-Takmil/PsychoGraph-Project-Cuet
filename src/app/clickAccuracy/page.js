@@ -4,6 +4,8 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import RequireAuth from '@/components/RequireAuth'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
+import { usePsychograph } from '@/context/PsychographContext'
+import { analyzeTestWithGemini } from '@/lib/geminiAnalysis'
 
 const LEVELS = [
   { label: 'Easy', targetCount: 4, duration: 25, speed: { min: 0.4, max: 1.2 }, dangerAt: 0, shrinkAt: 18 },
@@ -37,7 +39,8 @@ function createDanger(id, areaW, areaH) {
   }
 }
 
-function ClickAccuracyGame() {
+export default function ClickAccuracyGame() {
+  const { recordTestResult } = usePsychograph()
   const [gameState, setGameState] = useState('start')
   const [currentLevel, setCurrentLevel] = useState(0)
   const [targets, setTargets] = useState([])
@@ -49,10 +52,9 @@ function ClickAccuracyGame() {
   const [levelResults, setLevelResults] = useState([])
   const [lastCompleted, setLastCompleted] = useState(null)
   const [areaSize, setAreaSize] = useState({ w: 500, h: 500 })
+  const [aiInsight, setAiInsight] = useState('')
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
 
-  useEffect(() => {
-    if (gameState === 'complete') markCompleted('/clickAccuracy')
-  }, [gameState])
   const areaRef = useRef(null)
   const targetsRef = useRef([])
   const dangerRef = useRef([])
@@ -84,7 +86,34 @@ function ClickAccuracyGame() {
     stopAll()
     setLevelResults(results)
     setGameState('complete')
-  }, [stopAll])
+    markCompleted('/clickAccuracy')
+
+    const totalHits = results.reduce((sum, r) => sum + r.hits, 0)
+    const totalMisses = results.reduce((sum, r) => sum + r.misses, 0)
+    const totalPenalties = results.reduce((sum, r) => sum + r.penalties, 0)
+    const totalClicks = totalHits + totalMisses + totalPenalties
+    const overallAccuracy = totalClicks > 0 ? Math.round((totalHits / totalClicks) * 100) : 0
+
+    const payload = {
+      levelResults: results,
+      totalHits,
+      totalMisses,
+      totalPenalties,
+      overallAccuracy,
+      completedLevels: results.length,
+    }
+
+    recordTestResult('clickAccuracy', payload)
+
+    setIsAnalyzing(true)
+    analyzeTestWithGemini('Click Accuracy Challenge', payload)
+      .then((insight) => {
+        setAiInsight(insight)
+      })
+      .finally(() => {
+        setIsAnalyzing(false)
+      })
+  }, [stopAll, recordTestResult])
 
   const goToLevelIntro = useCallback(() => {
     setGameState('levelIntro')
@@ -94,6 +123,8 @@ function ClickAccuracyGame() {
     setCurrentLevel(0)
     setLevelResults([])
     setLastCompleted(null)
+    setAiInsight('')
+    setIsAnalyzing(false)
     stopAll()
     goToLevelIntro()
   }, [goToLevelIntro, stopAll])
@@ -147,8 +178,7 @@ function ClickAccuracyGame() {
         setLastCompleted(result)
 
         if (currentLevel + 1 >= LEVELS.length) {
-          setLevelResults(updated)
-          setGameState('complete')
+          finishGame(updated)
         } else {
           setLevelResults(updated)
           setCurrentLevel((prev) => prev + 1)
@@ -207,7 +237,7 @@ function ClickAccuracyGame() {
       animRef.current = requestAnimationFrame(tick)
     }
     animRef.current = requestAnimationFrame(tick)
-  }, [currentLevel, levelResults, goToLevelIntro])
+  }, [currentLevel, levelResults, goToLevelIntro, finishGame])
 
   const handleAreaClick = useCallback((e) => {
     if (gameState !== 'playing') return
@@ -265,9 +295,6 @@ function ClickAccuracyGame() {
   }, [gameState, areaSize, currentLevel])
 
   const formatTime = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-  const totalClicks = hits + misses + penalties
-  const accuracy = totalClicks > 0 ? Math.round((hits / totalClicks) * 100) : 0
-
   const levelName = LEVELS[currentLevel]?.label || ''
 
   return (
@@ -388,7 +415,7 @@ function ClickAccuracyGame() {
           <div className="bg-white/40 dark:bg-gray-900/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 dark:border-gray-700/50 p-10 text-center">
             <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-8">Challenge Complete</h2>
 
-            <div className="space-y-2 max-w-sm mx-auto mb-8">
+            <div className="space-y-2 max-w-sm mx-auto mb-6">
               {levelResults.map((r, i) => {
                 const c = r.hits + r.misses + r.penalties
                 const a = c > 0 ? Math.round((r.hits / c) * 100) : 0
@@ -409,6 +436,23 @@ function ClickAccuracyGame() {
               </p>
             )}
 
+            {isAnalyzing && (
+              <div className="my-6 p-4 bg-purple-500/10 rounded-2xl border border-purple-300/30 text-purple-700 dark:text-purple-300 text-sm animate-pulse">
+                Analyzing performance with Gemini AI...
+              </div>
+            )}
+
+            {aiInsight && !isAnalyzing && (
+              <div className="my-6 p-5 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-2xl text-left shadow-inner">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 mb-2">
+                  Gemini Insight
+                </h3>
+                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {aiInsight}
+                </p>
+              </div>
+            )}
+
             <button
               onClick={handleStart}
               className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
@@ -424,8 +468,4 @@ function ClickAccuracyGame() {
       </div>
     </div>
   )
-}
-
-export default function ClickAccuracyPage() {
-  return <RequireAuth><ClickAccuracyGame /></RequireAuth>
 }

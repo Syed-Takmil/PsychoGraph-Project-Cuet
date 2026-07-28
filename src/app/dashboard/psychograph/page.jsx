@@ -1,15 +1,38 @@
 'use client'
 
 import { BarChart3, ShieldCheck, Brain, Zap, Target, Moon } from 'lucide-react'
+import { usePsychograph } from '@/context/PsychographContext'
 
 export default function PsychographPage() {
-  // Dimension scores (0 to 100)
+  const { testResults } = usePsychograph()
+
+  // Dynamically derive metrics from extracted test context (or fallback defaults)
   const metrics = [
-    { label: 'Cognitive Speed', value: 82, icon: Zap },
-    { label: 'Attention Focus', value: 75, icon: Target },
-    { label: 'Memory Span', value: 88, icon: Brain },
-    { label: 'Emotional Resilience', value: 70, icon: ShieldCheck },
-    { label: 'Sleep Hygiene', value: 80, icon: Moon },
+    { 
+      label: 'Cognitive Speed', 
+      value: testResults.reaction?.score ?? 82, 
+      icon: Zap 
+    },
+    { 
+      label: 'Attention Focus', 
+      value: testResults.stroop?.score ?? 75, 
+      icon: Target 
+    },
+    { 
+      label: 'Memory Span', 
+      value: testResults.memory?.score ?? 88, 
+      icon: Brain 
+    },
+    { 
+      label: 'Emotional Resilience', 
+      value: testResults.visualPreference?.resilienceScore ?? 70, 
+      icon: ShieldCheck 
+    },
+    { 
+      label: 'Sleep Hygiene', 
+      value: testResults.lifestyle?.sleepScore ?? 80, 
+      icon: Moon 
+    },
   ]
 
   // Pure SVG Radar polygon math calculations

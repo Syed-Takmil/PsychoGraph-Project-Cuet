@@ -3,11 +3,11 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Button from '@/components/Button'
 import RadarChart from '@/components/RadarChart'
-import { useAuth } from '@/context/AuthContext'
 import { fadeUp, staggerContainer } from './animations'
+import { authClient } from '@/lib/auth-client'
 
 export default function HeroSection() {
-  const { isAuthenticated } = useAuth()
+  const { data:session } =  authClient.useSession();
   return (
     <section className="pt-40 pb-20 px-6 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center min-h-[90vh]">
       <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-xl">
@@ -21,7 +21,7 @@ export default function HeroSection() {
           Psychograph bypasses biased, direct self-reporting questions. By tracking micro-journaling cadence, visual resonance, and real-time interaction biometrics, it reveals your subconscious shape.
         </motion.p>
         <motion.div variants={fadeUp} className="flex flex-wrap gap-4">
-          <Link href={isAuthenticated ? '/clickAccuracy' : '/signup'}><Button>Begin assessment pipeline</Button></Link>
+          <Link href='/clickAccuracy'><Button>Begin assessment pipeline</Button></Link>
         </motion.div>
       </motion.div>
 

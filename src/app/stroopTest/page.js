@@ -24,18 +24,18 @@ function pickRandom() {
   return { randomWord, randomColor }
 }
 
-function EmotionStroopTest() {
+export default function EmotionStroopTest() {
   const [gameState, setGameState] = useState('start')
-
-  useEffect(() => {
-    if (gameState === 'results') markCompleted('/stroopTest')
-  }, [gameState])
   const [currentRound, setCurrentRound] = useState(1)
   const [score, setScore] = useState(0)
   const [responseTimes, setResponseTimes] = useState([])
   const [stimulusWord, setStimulusWord] = useState(COLORS[0])
   const [stimulusColor, setStimulusColor] = useState(COLORS[1])
   const [startTime, setStartTime] = useState(null)
+
+  useEffect(() => {
+    if (gameState === 'results') markCompleted('/stroopTest')
+  }, [gameState])
 
   const startTest = () => {
     setGameState('playing')
@@ -102,7 +102,7 @@ function EmotionStroopTest() {
             </p>
             <button
               onClick={startTest}
-              className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+              className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               Start Test
             </button>
@@ -121,7 +121,7 @@ function EmotionStroopTest() {
               {COLORS.map((color) => (
                 <button
                   key={color.key}
-                  className="rounded-xl p-4 font-semibold text-white shadow-md hover:scale-105 active:scale-95 transition-all duration-150"
+                  className="rounded-xl p-4 font-semibold text-white shadow-md hover:scale-105 active:scale-95 transition-all duration-150 cursor-pointer"
                   style={{ backgroundColor: color.hex }}
                   onClick={() => handleAnswer(color.key)}
                 >
@@ -141,7 +141,7 @@ function EmotionStroopTest() {
             </div>
             <button
               onClick={startTest}
-              className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+              className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               Try Again
             </button>
@@ -154,8 +154,4 @@ function EmotionStroopTest() {
       </div>
     </div>
   )
-}
-
-export default function StroopTestPage() {
-  return <RequireAuth><EmotionStroopTest /></RequireAuth>
 }

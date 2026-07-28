@@ -1,6 +1,8 @@
+
+
+
 'use client'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import RequireAuth from '@/components/RequireAuth'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
 
@@ -12,13 +14,17 @@ const TILES = Array.from({ length: TILE_COUNT }, (_, i) => ({
   hue: 250 + Math.floor(i * 15),
 }))
 
-function PatternMemoryGame() {
+
+
+// Added 'export default' here:
+export default function PatternMemoryGame() {
   const [gameState, setGameState] = useState('start')
   const [round, setRound] = useState(1)
 
   useEffect(() => {
     if (gameState === 'complete') markCompleted('/patternMemory')
   }, [gameState])
+
   const [activeTile, setActiveTile] = useState(null)
   const [highScore, setHighScore] = useState(0)
   const [message, setMessage] = useState('')
@@ -45,7 +51,7 @@ function PatternMemoryGame() {
     const timers = []
     let delay = 400
 
-    seq.forEach((tileId, i) => {
+    seq.forEach((tileId) => {
       timers.push(setTimeout(() => {
         setActiveTile(tileId)
       }, delay))
@@ -186,9 +192,5 @@ function PatternMemoryGame() {
         )}
       </div>
     </div>
-  )
-}
-
-export default function PatternMemoryPage() {
-  return <RequireAuth><PatternMemoryGame /></RequireAuth>
-}
+  )}
+  

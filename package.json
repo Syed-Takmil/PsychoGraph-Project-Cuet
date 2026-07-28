@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@better-auth/mongo-adapter": "^1.6.25",
+    "@google/genai": "^2.13.0",
+    "@google/generative-ai": "^0.24.1",
     "better-auth": "^1.6.25",
     "chart.js": "^4.5.1",
     "framer-motion": "^12.42.2",
@@ -18,7 +20,8 @@
     "next": "16.2.12",
     "react": "19.2.4",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

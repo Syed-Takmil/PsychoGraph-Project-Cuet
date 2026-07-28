@@ -1,25 +1,15 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import RequireAuth from '@/components/RequireAuth'
-import NextActivity from '@/components/NextActivity'
-import { markCompleted } from '@/lib/activityProgress'
 
-const EMOJI_POOL = [
-  '🐶','🐱','🐼','🦊','🐸','🐨','🐯','🦁','🐰','🐮',
-  '🍎','🍕','🍦','🍩','🍇','🍉','🍓','🍔','🌮','🍣',
-  '🌈','🌻','🍄','🌊','🔥','🌺','🍁','⭐','🌙','☀️',
-  '⚽','🎮','🎸','📚','🎨','🚀','🎯','💎','🎲','🎭',
-]
+// Game Configuration
+const EMOJI_POOL = ['🐶', '🐱', '🐼', '🦊', '🐸', '🐨', '🍎', '🍕', '🚀', '🎯', '💎', '🎲']
 
 const LEVELS = [
-  { totalCards: 8,  pairs: 4,  cols: 'grid-cols-4' },
-  { totalCards: 12, pairs: 6,  cols: 'grid-cols-3 md:grid-cols-4' },
-  { totalCards: 16, pairs: 8,  cols: 'grid-cols-4' },
-  { totalCards: 24, pairs: 12, cols: 'grid-cols-4 md:grid-cols-6' },
+  { pairs: 4, cols: 'grid-cols-4' },
+  { pairs: 6, cols: 'grid-cols-3 md:grid-cols-4' },
+  { pairs: 8, cols: 'grid-cols-4' }
 ]
-
-const TOTAL_PAIRS_ALL = LEVELS.reduce((s, l) => s + l.pairs, 0)
 
 function shuffle(arr) {
   const a = [...arr]
@@ -35,314 +25,244 @@ function buildCards(levelIndex) {
   const picked = shuffle(EMOJI_POOL).slice(0, level.pairs)
   const paired = picked.flatMap((emoji, i) => [
     { id: i * 2, emoji, pairId: i },
-    { id: i * 2 + 1, emoji, pairId: i },
+    { id: i * 2 + 1, emoji, pairId: i }
   ])
   return shuffle(paired)
 }
 
-const NOTO = { fontFamily: "'Noto Color Emoji', sans-serif" }
-
-function MemoryCardGame() {
-  const [gameState, setGameState] = useState('start')
+export default function MemoryGame() {
+  const [gameState, setGameState] = useState('start') // 'start' | 'playing' | 'complete'
   const [currentLevel, setCurrentLevel] = useState(0)
-
-  useEffect(() => {
-    if (gameState === 'complete') markCompleted('/memoryCard')
-  }, [gameState])
   const [cards, setCards] = useState([])
   const [flipped, setFlipped] = useState([])
   const [matched, setMatched] = useState(new Set())
-  const [mistakes, setMistakes] = useState(0)
-  const [elapsed, setElapsed] = useState(0)
-  const [isChecking, setIsChecking] = useState(false)
-  const [levelResults, setLevelResults] = useState([])
-  const [lastCompleted, setLastCompleted] = useState(null)
+  const [report, setReport] = useState(null)
 
-  const timerRef = useRef(null)
-  const globalStartRef = useRef(null)
-  const levelStartRef = useRef(null)
+  // Telemetry & Tracking
+  const telemetry = useRef({
+    startTime: 0,
+    clicks: [],
+    mistakes: 0,
+    matches: 0
+  })
 
-  useEffect(() => {
-    return () => clearInterval(timerRef.current)
-  }, [])
-
-  const stopTimer = useCallback(() => {
-    clearInterval(timerRef.current)
-    timerRef.current = null
-  }, [])
-
-  const startTimer = useCallback(() => {
-    globalStartRef.current = Date.now()
-    levelStartRef.current = Date.now()
-    setElapsed(0)
-    clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - globalStartRef.current) / 1000))
-    }, 1000)
-  }, [])
-
-  const goToLevelIntro = useCallback(() => {
-    setGameState('levelIntro')
-  }, [])
-
-  const handleStart = useCallback(() => {
-    setCurrentLevel(0)
-    setLevelResults([])
-    setLastCompleted(null)
-    setElapsed(0)
-    stopTimer()
-    goToLevelIntro()
-  }, [goToLevelIntro, stopTimer])
-
-  const handleBeginLevel = useCallback(() => {
-    setCards(buildCards(currentLevel))
+  // Start Level & Tracking
+  const startLevel = useCallback((lvlIndex) => {
+    setCurrentLevel(lvlIndex)
+    setCards(buildCards(lvlIndex))
     setFlipped([])
     setMatched(new Set())
-    setMistakes(0)
-    setIsChecking(false)
+    
+    // Reset Telemetry for this session
+    telemetry.current = {
+      startTime: Date.now(),
+      clicks: [],
+      mistakes: 0,
+      matches: 0
+    }
+    
     setGameState('playing')
-    levelStartRef.current = Date.now()
-    if (!timerRef.current) startTimer()
-  }, [currentLevel, startTimer])
+  }, [])
 
-  const finishGame = useCallback((results) => {
-    stopTimer()
-    setLevelResults(results)
-    setGameState('complete')
-  }, [stopTimer])
+  // Analyze Telemetry & Predict Mood
+  const generateReportAndMood = (data) => {
+    const totalTimeSec = Math.round((Date.now() - data.startTime) / 1000)
+    const latencies = data.clicks.map(c => c.latencyMs).filter(t => t > 0)
+    const avgLatency = latencies.length ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0
+    
+    // Rapid mistakes (< 600ms latency)
+    const rapidMistakes = data.clicks.filter(c => !c.isMatch && c.latencyMs > 0 && c.latencyMs < 600).length
+    const accuracy = Math.round((data.matches / (data.matches + data.mistakes || 1)) * 100)
 
-  const handleGiveUp = useCallback(() => {
-    finishGame(levelResults)
-  }, [levelResults, finishGame])
+    // Rule-Based Mood Prediction
+    let moodPrediction = { mood: 'Neutral', indicator: 'Steady standard gameplay.' }
+    let suggestions = []
 
-  const handleCardClick = useCallback((cardId) => {
-    if (isChecking || gameState !== 'playing') return
-    if (matched.has(cardId)) return
-    if (flipped.includes(cardId)) return
-    if (flipped.length === 2) return
+    if (rapidMistakes >= 2 || (accuracy < 50 && avgLatency < 800)) {
+      moodPrediction = {
+        mood: 'Frustrated / Rushing',
+        indicator: 'Fast consecutive clicks after errors detected.'
+      }
+      suggestions = [
+        'Take a quick 10-second breather before starting the next round.',
+        'Focus on memorizing positions before clicking rather than guessing quickly.'
+      ]
+    } else if (accuracy >= 75 && avgLatency >= 600 && avgLatency <= 1600) {
+      moodPrediction = {
+        mood: 'Focused & Calm',
+        indicator: 'Strong accuracy paired with steady, confident pacing.'
+      }
+      suggestions = [
+        'Great focus! You are in peak memory state right now.',
+        'Ready to tackle higher card grids.'
+      ]
+    } else if (avgLatency > 2000 || totalTimeSec > 60) {
+      moodPrediction = {
+        mood: 'Fatigued / Distracted',
+        indicator: 'Long hesitations noticed between card flips.'
+      }
+      suggestions = [
+        'Hydrate or step away for a quick break to recharge your focus.',
+        'Try a shorter grid layout to rebuild momentum.'
+      ]
+    } else {
+      suggestions = ['Keep practicing to sharpen your recall speed!']
+    }
+
+    return {
+      timeSec: totalTimeSec,
+      accuracy,
+      mistakes: data.mistakes,
+      avgSpeed: avgLatency,
+      mood: moodPrediction,
+      suggestions
+    }
+  }
+
+  // Handle Card Clicks & Telemetry Extraction
+  const handleCardClick = (cardId) => {
+    if (flipped.length === 2 || flipped.includes(cardId) || matched.has(cardId)) return
+
+    const now = Date.now()
+    const lastClick = telemetry.current.clicks[telemetry.current.clicks.length - 1]
+    const latency = lastClick ? now - lastClick.timestamp : 0
 
     const newFlipped = [...flipped, cardId]
     setFlipped(newFlipped)
 
     if (newFlipped.length === 2) {
-      setIsChecking(true)
       const [first, second] = newFlipped
-      const cardA = cards.find((c) => c.id === first)
-      const cardB = cards.find((c) => c.id === second)
+      const cardA = cards.find(c => c.id === first)
+      const cardB = cards.find(c => c.id === second)
+      const isMatch = cardA.pairId === cardB.pairId
 
-      if (cardA.pairId === cardB.pairId) {
-        const newMatched = new Set(matched)
-        newMatched.add(first)
-        newMatched.add(second)
+      // Log Click Telemetry
+      telemetry.current.clicks.push({ timestamp: now, latencyMs: latency, isMatch })
+
+      if (isMatch) {
+        telemetry.current.matches += 1
+        const newMatched = new Set(matched).add(first).add(second)
         setMatched(newMatched)
         setFlipped([])
-        setIsChecking(false)
 
+        // Check level completion
         if (newMatched.size === cards.length) {
-          const levelTime = Math.floor((Date.now() - levelStartRef.current) / 1000)
-          const result = { level: currentLevel + 1, time: levelTime, mistakes }
-          setLastCompleted(result)
-          const updated = [...levelResults, result]
-
-          if (currentLevel + 1 >= LEVELS.length) {
-            finishGame(updated)
-          } else {
-            setLevelResults(updated)
-            setTimeout(() => {
-              setCurrentLevel((prev) => prev + 1)
-              goToLevelIntro()
-            }, 1500)
-          }
+          setTimeout(() => {
+            if (currentLevel + 1 < LEVELS.length) {
+              startLevel(currentLevel + 1)
+            } else {
+              // Game Complete -> Analyze Data
+              const finalReport = generateReportAndMood(telemetry.current)
+              setReport(finalReport)
+              setGameState('complete')
+            }
+          }, 800)
         }
       } else {
-        setMistakes((prev) => prev + 1)
-        setTimeout(() => {
-          setFlipped([])
-          setIsChecking(false)
-        }, 700)
+        telemetry.current.mistakes += 1
+        setTimeout(() => setFlipped([]), 800)
       }
+    } else {
+      // First card flip of a pair
+      telemetry.current.clicks.push({ timestamp: now, latencyMs: latency, isMatch: false })
     }
-  }, [gameState, isChecking, flipped, matched, cards, currentLevel, mistakes, levelResults, finishGame, goToLevelIntro])
-
-  const formatTime = (secs) => {
-    const m = Math.floor(secs / 60)
-    const s = secs % 60
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
   }
 
-  const level = LEVELS[currentLevel]
-  const levelNum = currentLevel + 1
-  const matchedCount = matched.size / 2
-
-  const totalMistakes = levelResults.reduce((s, r) => s + r.mistakes, 0)
-  const completedPairs = levelResults.reduce((s, r) => s + LEVELS[r.level - 1].pairs, 0)
-  const totalAttempts = completedPairs + totalMistakes
-  const accuracy = totalAttempts > 0 ? Math.round((completedPairs / totalAttempts) * 100) : 0
-  const totalTime = levelResults.reduce((s, r) => s + r.time, 0)
-
   return (
-    <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-purple-950 dark:to-gray-900">
-      <div className="w-full max-w-3xl">
-
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white p-6">
+      <div className="w-full max-w-xl bg-gray-800/80 rounded-2xl p-6 border border-gray-700 shadow-xl text-center">
+        
+        {/* START SCREEN */}
         {gameState === 'start' && (
-          <div className="bg-white/40 dark:bg-gray-900/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 dark:border-gray-700/50 p-10 text-center">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 tracking-tight">
-              Memory Card Game
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 max-w-md mx-auto leading-relaxed">
-              Flip cards and match all pairs across four levels of increasing difficulty.
+          <div>
+            <h1 className="text-2xl font-bold mb-4">Memory & Cognitive Tracker</h1>
+            <p className="text-gray-400 text-sm mb-6">
+              Match pairs while our engine analyzes your speed and accuracy to generate a cognitive report.
             </p>
             <button
-              onClick={handleStart}
-              className="px-10 py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+              onClick={() => startLevel(0)}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold transition"
             >
-              Start Game
+              Start Playing
             </button>
           </div>
         )}
 
-        {gameState === 'levelIntro' && (
-          <div className="bg-white/40 dark:bg-gray-900/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 dark:border-gray-700/50 p-10 text-center">
-            {lastCompleted && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Level {lastCompleted.level} &middot; {formatTime(lastCompleted.time)} &middot; {lastCompleted.mistakes} mistake{lastCompleted.mistakes !== 1 ? 's' : ''}
-              </p>
-            )}
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-              Level {levelNum}
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-8">
-              {level.totalCards} cards &middot; {level.pairs} pairs
-            </p>
-            <button
-              onClick={handleBeginLevel}
-              className="px-10 py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold text-lg rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
-            >
-              Begin
-            </button>
-          </div>
-        )}
-
-        {(gameState === 'playing') && (
-          <>
-            <div className="flex items-center justify-between mb-5 px-1">
-              <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400">
-                <span>Level <strong className="text-gray-800 dark:text-gray-100">{levelNum}</strong></span>
-                <span>Matched: <strong className="text-gray-800 dark:text-gray-100">{matchedCount}/{level.pairs}</strong></span>
-                <span>Mistakes: <strong className="text-gray-800 dark:text-gray-100">{mistakes}</strong></span>
-              </div>
-              <span className="text-sm font-mono text-gray-500 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 px-3 py-1 rounded-lg border border-purple-200 dark:border-purple-800">
-                {formatTime(elapsed)}
-              </span>
+        {/* PLAYING SCREEN */}
+        {gameState === 'playing' && (
+          <div>
+            <div className="flex justify-between text-xs text-gray-400 mb-4">
+              <span>Level {currentLevel + 1} of {LEVELS.length}</span>
+              <span>Mistakes: {telemetry.current.mistakes}</span>
             </div>
 
-            <div className={`grid gap-3 md:gap-4 ${level.cols}`}>
+            <div className={`grid ${LEVELS[currentLevel].cols} gap-3 my-4`}>
               {cards.map((card) => {
                 const isFlipped = flipped.includes(card.id) || matched.has(card.id)
-                const isMatched = matched.has(card.id)
                 return (
                   <button
                     key={card.id}
                     onClick={() => handleCardClick(card.id)}
-                    disabled={isMatched || isChecking}
-                    className="aspect-square rounded-2xl transition-all duration-300 focus:outline-none"
-                    style={{ perspective: '600px' }}
+                    className={`aspect-square rounded-xl text-3xl flex items-center justify-center transition-all duration-300 ${
+                      isFlipped ? 'bg-gray-700' : 'bg-indigo-600 hover:bg-indigo-500'
+                    }`}
                   >
-                    <div
-                      className="relative w-full h-full transition-transform duration-400"
-                      style={{
-                        transformStyle: 'preserve-3d',
-                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-400 shadow-lg border border-white/30 flex items-center justify-center"
-                        style={{ backfaceVisibility: 'hidden' }}
-                      >
-                        <span className="text-2xl opacity-40">?</span>
-                      </div>
-                      <div
-                        className={`absolute inset-0 rounded-2xl flex items-center justify-center shadow-lg border transition-colors ${
-                          isMatched
-                            ? 'bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-700'
-                            : 'bg-white/80 dark:bg-gray-800/80 border-purple-200 dark:border-purple-800'
-                        }`}
-                        style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                      >
-                        <span className="text-2xl md:text-3xl" style={NOTO}>{card.emoji}</span>
-                      </div>
-                    </div>
+                    {isFlipped ? card.emoji : '❓'}
                   </button>
                 )
               })}
             </div>
-
-            <div className="text-center mt-6">
-              <button
-                onClick={handleGiveUp}
-                className="px-6 py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 border border-gray-300 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-700 rounded-xl transition-colors"
-              >
-                Give Up
-              </button>
-            </div>
-          </>
+          </div>
         )}
 
-        {gameState === 'complete' && (
-          <div className="bg-white/40 dark:bg-gray-900/60 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/50 dark:border-gray-700/50 p-10 text-center">
-            <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-8">Game Over</h2>
+        {/* REPORT & MOOD SUMMARY SCREEN */}
+        {gameState === 'complete' && report && (
+          <div className="text-left space-y-4">
+            <h2 className="text-2xl font-bold text-center text-indigo-400 mb-2">Cognitive & Mood Report</h2>
 
-            <div className="flex justify-center gap-6 mb-8">
-              <div className="bg-purple-100/50 dark:bg-purple-900/30 rounded-xl px-6 py-4">
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{formatTime(totalTime)}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">Total Time</p>
+            {/* Mood Card */}
+            <div className="p-4 bg-indigo-950/60 border border-indigo-700/50 rounded-xl">
+              <span className="text-xs text-indigo-300 uppercase tracking-widest block mb-1">Predicted Mood</span>
+              <div className="text-xl font-bold text-indigo-200">{report.mood.mood}</div>
+              <p className="text-xs text-indigo-300/80 mt-1">{report.mood.indicator}</p>
+            </div>
+
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-3 gap-2 text-center text-sm">
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <div className="text-gray-400 text-xs">Accuracy</div>
+                <div className="font-bold text-base mt-1">{report.accuracy}%</div>
               </div>
-              <div className="bg-purple-100/50 dark:bg-purple-900/30 rounded-xl px-6 py-4">
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{accuracy}%</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">Accuracy</p>
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <div className="text-gray-400 text-xs">Total Time</div>
+                <div className="font-bold text-base mt-1">{report.timeSec}s</div>
               </div>
-              <div className="bg-purple-100/50 dark:bg-purple-900/30 rounded-xl px-6 py-4">
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{totalMistakes}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mt-1">Mistakes</p>
+              <div className="bg-gray-700/50 p-3 rounded-lg">
+                <div className="text-gray-400 text-xs">Avg Move Speed</div>
+                <div className="font-bold text-base mt-1">{report.avgSpeed}ms</div>
               </div>
             </div>
 
-            {levelResults.length > 0 && (
-              <div className="space-y-2 max-w-sm mx-auto mb-8">
-                {levelResults.map((r, i) => (
-                  <div key={i} className="flex justify-between items-center bg-purple-100/50 dark:bg-purple-900/30 rounded-xl px-5 py-3 text-sm">
-                    <span className="text-gray-600 dark:text-gray-300 font-medium">Level {r.level}</span>
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {formatTime(r.time)} &middot; {r.mistakes} mistake{r.mistakes !== 1 ? 's' : ''}
-                    </span>
-                  </div>
+            {/* Actionable Suggestions */}
+            <div className="bg-gray-700/30 p-4 rounded-xl border border-gray-700">
+              <span className="text-xs text-gray-400 uppercase tracking-wider block mb-2">Suggestions for Player</span>
+              <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
+                {report.suggestions.map((item, idx) => (
+                  <li key={idx}>{item}</li>
                 ))}
-              </div>
-            )}
-
-            {levelResults.length < LEVELS.length && (
-              <p className="text-sm text-gray-400 dark:text-gray-500 mb-6">
-                Completed {levelResults.length} of {LEVELS.length} levels
-              </p>
-            )}
+              </ul>
+            </div>
 
             <button
-              onClick={handleStart}
-              className="px-10 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all"
+              onClick={() => startLevel(0)}
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold mt-4 transition"
             >
               Play Again
             </button>
-            <div className="mt-4">
-              <NextActivity currentPath="/memoryCard" />
-            </div>
           </div>
         )}
 
       </div>
     </div>
   )
-}
-
-export default function MemoryCardPage() {
-  return <RequireAuth><MemoryCardGame /></RequireAuth>
 }

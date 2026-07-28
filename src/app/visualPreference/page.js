@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import RequireAuth from '@/components/RequireAuth'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
+import { usePsychograph } from '@/context/PsychographContext'
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -51,7 +52,8 @@ function shuffle(arr) {
   return a
 }
 
-function VisualPreferenceTest() {
+export default function VisualPreferenceTest() {
+  const { recordTestResult } = usePsychograph()
   const [gameState, setGameState] = useState('start')
   const [emotionTally, setEmotionTally] = useState(
     Object.fromEntries(LABELS.map((key) => [key, 0]))
@@ -64,9 +66,37 @@ function VisualPreferenceTest() {
   const [replacementImg, setReplacementImg] = useState(null)
   const timerRef = useRef(null)
 
+  const resultsSummary = useMemo(() => {
+    if (gameState !== 'complete') return null
+
+    const entries = Object.entries(emotionTally)
+    const dominant = entries.reduce((max, current) =>
+      current[1] > max[1] ? current : max, ['', 0]
+    )
+
+    const isNegative = ['Angry', 'Sad'].includes(dominant[0])
+    const score = dominant[1]
+
+    let recommendation = 'Maintain your current positive habits.'
+    if (score >= 3 && dominant[0] === 'Sad')
+      recommendation = 'You selected several low-valence images. Consider engaging in an uplifting activity or connecting with a friend.'
+    return { dominant: dominant[0], score, recommendation, isNegative }
+  }, [gameState, emotionTally])
+
+  // EXTRACT DATA AND SUBMIT TO CONTEXT / PAYLOAD ON COMPLETION
   useEffect(() => {
-    if (gameState === 'complete') markCompleted('/visualPreference')
-  }, [gameState])
+    if (gameState === 'complete' && resultsSummary) {
+      markCompleted('/visualPreference')
+
+      recordTestResult('visualPreference', {
+        tally: emotionTally,
+        dominantEmotion: resultsSummary.dominant,
+        score: resultsSummary.score,
+        // Convert score to 0-100 scale for radar/psychograph
+        resilienceScore: Math.round((resultsSummary.score / MAX_SELECTIONS) * 100),
+      })
+    }
+  }, [gameState, resultsSummary])
 
   const beginTest = () => {
     const s = shuffle(IMAGE_LIBRARY)
@@ -102,9 +132,9 @@ function VisualPreferenceTest() {
         setGameState('complete')
       } else if (poolIndex < pool.length) {
         setDisplayed((prev) => {
-          const next = [...prev]
-          next[idx] = pool[poolIndex]
-          return next
+          const nextArr = [...prev]
+          nextArr[idx] = pool[poolIndex]
+          return nextArr
         })
         setPoolIndex((p) => p + 1)
       }
@@ -158,23 +188,6 @@ function VisualPreferenceTest() {
       },
     },
   }), [selectionsMade])
-
-  const resultsSummary = useMemo(() => {
-    if (gameState !== 'complete') return null
-
-    const entries = Object.entries(emotionTally)
-    const dominant = entries.reduce((max, current) =>
-      current[1] > max[1] ? current : max, ['', 0]
-    )
-
-    const isNegative = ['Angry', 'Sad'].includes(dominant[0])
-    const score = dominant[1]
-
-    let recommendation = 'Maintain your current positive habits.'
-    if (score >= 3 && dominant[0] === 'Sad')
-      recommendation = 'You selected several low-valence images. Consider engaging in an uplifting activity or connecting with a friend.'
-    return { dominant: dominant[0], score, recommendation, isNegative }
-  }, [gameState, emotionTally])
 
   return (
     <div className="flex-1 flex items-center justify-center p-6 bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 dark:from-gray-900 dark:via-purple-950 dark:to-gray-900">
@@ -247,10 +260,7 @@ function VisualPreferenceTest() {
                       onClick={() => handleImageSelect(img, idx)}
                       className="relative rounded-xl overflow-hidden cursor-pointer group shadow-md hover:shadow-lg transition-shadow"
                     >
-                      <div
-                        className="w-full"
-                        style={{ perspective: '600px' }}
-                      >
+                      <div className="w-full" style={{ perspective: '600px' }}>
                         <div
                           className="relative transition-transform duration-500"
                           style={{
@@ -258,11 +268,7 @@ function VisualPreferenceTest() {
                             transform: isFlipping ? 'rotateX(180deg)' : 'rotateX(0deg)',
                           }}
                         >
-                          <div
-                            className="backface-hidden"
-                            style={{ backfaceVisibility: 'hidden' }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <div className="backface-hidden" style={{ backfaceVisibility: 'hidden' }}>
                             <img src={img.src} alt={img.alt} className="w-full h-36 object-cover" loading="lazy" />
                             <div className="absolute inset-0 bg-purple-600/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-semibold text-sm">
                               Select
@@ -272,7 +278,6 @@ function VisualPreferenceTest() {
                             className="absolute inset-0"
                             style={{ backfaceVisibility: 'hidden', transform: 'rotateX(180deg)' }}
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={isFlipping && replacementImg ? replacementImg.src : img.src} alt={img.alt} className="w-full h-36 object-cover" loading="lazy" />
                           </div>
                         </div>
@@ -284,7 +289,7 @@ function VisualPreferenceTest() {
             </div>
           )}
 
-          {gameState === 'complete' && (
+          {gameState === 'complete' && resultsSummary && (
             <div>
               <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-5">Analysis Complete 🧠</h3>
               <div className="bg-purple-100/50 dark:bg-purple-900/30 rounded-2xl p-6 border border-purple-200/50 dark:border-purple-800/50">
@@ -323,8 +328,4 @@ function VisualPreferenceTest() {
       </div>
     </div>
   )
-}
-
-export default function VisualPreferencePage() {
-  return <RequireAuth><VisualPreferenceTest /></RequireAuth>
 }

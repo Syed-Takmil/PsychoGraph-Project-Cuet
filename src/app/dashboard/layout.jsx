@@ -19,6 +19,7 @@ import {
 import { authClient } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { PsychographProvider } from '@/context/PsychographContext'
 
 export default function DashboardLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -155,7 +156,11 @@ export default function DashboardLayout({ children }) {
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 w-full pt-16 lg:pt-0 min-h-screen">
-        {children}
+        <PsychographProvider>
+
+{children}
+        </PsychographProvider>
+        
       </main>
 
     </div>
