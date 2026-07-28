@@ -20,7 +20,6 @@ export default function Home() {
         <EvolutionSection />
         <FooterCTA />
       </main>
-      <Footer />
     </div>
   )
 }

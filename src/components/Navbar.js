@@ -10,7 +10,12 @@ import {
   CheckCircle, 
   User,
   Settings,
-  Mail
+  Mail,
+  LayoutDashboard,
+  Droplets,
+  Smile,
+  BarChart3,
+  FileText
 } from 'lucide-react'
 import { getCompletedActivities } from '@/lib/activityProgress'
 import { authClient } from '@/lib/auth-client'
@@ -27,11 +32,13 @@ export default function Navbar() {
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
   
   const [activitiesOpen, setActivitiesOpen] = useState(false)
+  const [dashboardOpen, setDashboardOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   
   const [completed, setCompleted] = useState(() => getCompletedActivities())
   
   const dropdownRef = useRef(null)
+  const dashboardRef = useRef(null)
   const profileRef = useRef(null)
 
   useEffect(() => {
@@ -54,6 +61,9 @@ export default function Navbar() {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setActivitiesOpen(false)
+      }
+      if (dashboardRef.current && !dashboardRef.current.contains(e.target)) {
+        setDashboardOpen(false)
       }
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false)
@@ -83,6 +93,14 @@ export default function Navbar() {
     { label: 'Visual Preference', href: '/visualPreference' },
   ]
 
+  const dashboardLinks = [
+    { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Daily Logs (Water & Sleep)', href: '/dashboard/daily-logs', icon: Droplets },
+    { label: "Today's Mood Check-in", href: '/dashboard/mood', icon: Smile },
+    { label: 'My Psychograph Score', href: '/dashboard/psychograph', icon: BarChart3 },
+    { label: 'Download Report (PDF)', href: '/dashboard/reports', icon: FileText },
+  ]
+
   const navLinkClass = "relative text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-300 group"
 
   return (
@@ -102,6 +120,36 @@ export default function Navbar() {
             Home
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all duration-300 group-hover:w-full"></span>
           </Link>
+
+          {/* Dashboard Dropdown (Authenticated Users Only) */}
+          {mounted && isAuthenticated && (
+            <div className="relative" ref={dashboardRef}>
+              <button
+                onClick={() => setDashboardOpen((prev) => !prev)}
+                className={`${navLinkClass} flex items-center gap-1 cursor-pointer`}
+              >
+                Dashboard
+                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${dashboardOpen ? 'rotate-180 text-purple-500' : ''}`} />
+              </button>
+
+              <div className={`absolute top-full left-0 mt-4 w-60 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-purple-100 dark:border-purple-500/20 py-2 overflow-hidden transition-all duration-300 origin-top-left ${dashboardOpen ? 'opacity-100 scale-100 translate-y-0 visible' : 'opacity-0 scale-95 -translate-y-2 invisible'}`}>
+                {dashboardLinks.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setDashboardOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all duration-200"
+                    >
+                      <Icon className="w-4 h-4 text-purple-500" />
+                      {item.label}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Activities Dropdown */}
           <div className="relative" ref={dropdownRef}>
@@ -194,7 +242,7 @@ export default function Navbar() {
                     </p>
                   </div>
                   <div className="py-2">
-                    <Link href="/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 transition-colors">
+                    <Link href="/dashboard/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 transition-colors">
                       <Settings className="w-4 h-4" />
                       Account Settings
                     </Link>
