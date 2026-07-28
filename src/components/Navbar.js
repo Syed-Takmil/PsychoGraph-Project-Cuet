@@ -12,22 +12,21 @@ import {
   Settings,
   Mail
 } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
 import { getCompletedActivities } from '@/lib/activityProgress'
-import Image from 'next/image'
+import { authClient } from '@/lib/auth-client'
 
 const subscribe = () => () => {}
 const getClientSnapshot = () => true
 const getServerSnapshot = () => false
 
 export default function Navbar() {
-  // ---> CHANGED: Destructured `user` from useAuth (assuming your auth context provides it)
-  const { isAuthenticated, logout, user } = useAuth()
+  const { data: session } = authClient.useSession()
+  const user = session?.user
+  const isAuthenticated = !!user
   const router = useRouter()
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
   
   const [activitiesOpen, setActivitiesOpen] = useState(false)
-  // ---> CHANGED: Added state for the new user profile dropdown
   const [profileOpen, setProfileOpen] = useState(false)
   
   const [completed, setCompleted] = useState(() => getCompletedActivities())
@@ -51,7 +50,6 @@ export default function Navbar() {
     return () => btn.removeEventListener('click', handler)
   }, [])
 
-  // ---> CHANGED: Updated click-outside handler to manage both dropdowns
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -65,6 +63,16 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/login')
+        },
+      },
+    })
+  }
+
   const activityLinks = [
     { label: 'Click Accuracy', href: '/clickAccuracy' },
     { label: 'Memory Card', href: '/memoryCard' },
@@ -75,7 +83,6 @@ export default function Navbar() {
     { label: 'Visual Preference', href: '/visualPreference' },
   ]
 
-  // ---> CHANGED: Shared link styling for a modern, animated hover effect
   const navLinkClass = "relative text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-300 group"
 
   return (
@@ -86,11 +93,10 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 group">
           <Hexagon className="w-6 h-6 text-purple-600 dark:text-purple-400 group-hover:rotate-90 transition-transform duration-500" />
           <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">
-            Psychograph
+            PsychoGraph
           </span>
         </Link>
 
-        {/* ---> CHANGED: Added Home, About Us, Contact Us, and Terms to the navbar alongside Activities */}
         <div className="hidden lg:flex items-center gap-8">
           <Link href="/" className={navLinkClass}>
             Home
@@ -110,7 +116,6 @@ export default function Navbar() {
               <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${activitiesOpen ? 'rotate-180 text-purple-500' : ''}`} />
             </button>
             
-            {/* Animated Activities Dropdown */}
             <div className={`absolute top-full left-0 mt-4 w-52 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-purple-100 dark:border-purple-500/20 py-2 overflow-hidden transition-all duration-300 origin-top-left ${activitiesOpen ? 'opacity-100 scale-100 translate-y-0 visible' : 'opacity-0 scale-95 -translate-y-2 invisible'}`}>
               {activityLinks.map((item) => {
                 const done = completed.includes(item.href)
@@ -155,14 +160,13 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         {mounted && (
           isAuthenticated ? (
-            // ---> CHANGED: Logged In State - Shows Profile Pic with Dropdown and separate Signout Button
             <div className="flex items-center gap-4">
               
               {/* Profile Picture & Details Dropdown */}
               <div className="relative" ref={profileRef}>
                 <button 
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="relative group rounded-full p-1 border-2 border-transparent hover:border-purple-500 transition-all duration-300"
+                  className="relative group rounded-full p-1 border-2 border-transparent hover:border-purple-500 transition-all duration-300 cursor-pointer"
                 >
                   {user?.image ? (
                     <img 
@@ -175,7 +179,6 @@ export default function Navbar() {
                       <User className="w-5 h-5" />
                     </div>
                   )}
-                  {/* Status Indicator */}
                   <span className="absolute bottom-1 right-1 w-2.5 h-2.5 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full"></span>
                 </button>
 
@@ -183,15 +186,15 @@ export default function Navbar() {
                 <div className={`absolute top-full right-0 mt-3 w-64 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden transition-all duration-300 origin-top-right ${profileOpen ? 'opacity-100 scale-100 translate-y-0 visible' : 'opacity-0 scale-95 -translate-y-2 invisible'}`}>
                   <div className="p-4 border-b border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-black/20">
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                      {user?.name || 'Jane Doe'}
+                      {user?.name || user?.username || 'User'}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1 truncate">
-                      <Mail className="w-3 h-3" />
-                      {user?.email || 'user@example.com'}
+                      <Mail className="w-3 h-3 shrink-0" />
+                      {user?.email || 'No email provided'}
                     </p>
                   </div>
                   <div className="py-2">
-                    <Link href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 transition-colors">
+                    <Link href="/profile" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:text-purple-600 dark:hover:text-purple-300 transition-colors">
                       <Settings className="w-4 h-4" />
                       Account Settings
                     </Link>
@@ -201,15 +204,14 @@ export default function Navbar() {
 
               {/* Signout Button Beside Profile */}
               <button
-                onClick={() => { logout(); router.push('/') }}
-                className="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors duration-300"
+                onClick={handleSignOut}
+                className="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors duration-300 cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 Sign Out
               </button>
             </div>
           ) : (
-            // ---> CHANGED: Logged Out State - Login and Sign Up Side by Side
             <div className="hidden md:flex items-center gap-3">
               <Link 
                 href="/login" 
@@ -230,7 +232,7 @@ export default function Navbar() {
         {/* Theme Toggle Button */}
         <button
           id="theme-toggle"
-          className="shrink-0 p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent dark:border-white/5 transition-all duration-300 text-lg leading-none shadow-sm"
+          className="shrink-0 p-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 border border-transparent dark:border-white/5 transition-all duration-300 text-lg leading-none shadow-sm cursor-pointer"
           aria-label="Toggle theme"
         >
           <span className="inline dark:hidden">🌙</span>

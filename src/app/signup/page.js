@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Dialog from '@/components/Dialog'
 import { useAuth } from '@/context/AuthContext'
+import { createAuthClient } from 'better-auth/client'
+
+const authClient = createAuthClient()
 
 const moods = [
   { emoji: '😐', label: 'Neutral' },
@@ -54,6 +57,7 @@ export default function SignUpPage() {
   const [message, setMessage] = useState({ text: '', type: '' })
   const [showTerms, setShowTerms] = useState(false)
   const [showPrivacy, setShowPrivacy] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   useEffect(() => {
     if (!message.text) return
@@ -88,6 +92,19 @@ export default function SignUpPage() {
     return val !== '' && val !== null && val !== undefined
   }).length
   const progress = Math.round((filledCount / totalFields) * 100)
+
+  const signIn = async () => {
+    setGoogleLoading(true)
+    setMessage({ text: '', type: '' })
+    try {
+      const data = await authClient.signIn.social({
+        provider: "google",
+      })
+    } catch (err) {
+      setMessage({ text: 'Google sign-up failed. Please try again.', type: 'error' })
+      setGoogleLoading(false)
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -134,7 +151,31 @@ export default function SignUpPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-2 text-center tracking-tight">
             Create Your Profile
           </h1>
-          <p className="text-center text-gray-500 dark:text-gray-400 mb-8">Help us understand you better</p>
+          <p className="text-center text-gray-500 dark:text-gray-400 mb-6">Help us understand you better</p>
+
+          {/* Google Sign Up Button */}
+          <div className="mb-8">
+            <button
+              type="button"
+              onClick={signIn}
+              disabled={googleLoading}
+              className="w-full py-3.5 px-4 rounded-xl bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 border border-purple-200 dark:border-purple-800 text-gray-800 dark:text-white font-medium text-sm transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.01] active:scale-95 disabled:opacity-50 cursor-pointer shadow-md"
+            >
+              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.19v3.15C3.17 21.36 7.22 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.6H1.19C.43 8.13 0 9.87 0 12s.43 3.87 1.19 5.4l4.08-3.16z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.22 0 3.17 2.64 1.19 6.6l4.08 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/>
+              </svg>
+              {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
+            </button>
+
+            <div className="flex items-center my-6">
+              <div className="flex-grow border-t border-purple-200 dark:border-purple-800"></div>
+              <span className="px-3 text-xs text-gray-400 uppercase tracking-widest font-semibold">Or fill details manually</span>
+              <div className="flex-grow border-t border-purple-200 dark:border-purple-800"></div>
+            </div>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-10">
 
@@ -401,7 +442,7 @@ export default function SignUpPage() {
         <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">2. Use of Service</h3>
         <p>Psychograph provides behavioral assessment tools for informational and educational purposes only. Our assessments are not diagnostic instruments and should not replace professional medical or psychological advice.</p>
         <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">3. User Conduct</h3>
-        <p>You agree not to misuse the platform, interfere with its operation, or attempt to access data不属于 you. Any automated scraping, reverse engineering, or abusive usage is strictly prohibited.</p>
+        <p>You agree not to misuse the platform, interfere with its operation, or attempt to access data. Any automated scraping, reverse engineering, or abusive usage is strictly prohibited.</p>
         <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">4. Intellectual Property</h3>
         <p>All content, trademarks, and proprietary technology within Psychograph are owned by or licensed to us. You may not reproduce, distribute, or create derivative works without explicit written consent.</p>
         <h3 className="font-semibold text-gray-800 dark:text-gray-100 pt-2">5. Limitation of Liability</h3>
