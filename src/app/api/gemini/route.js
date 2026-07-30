@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
 export async function POST(req) {
   try {
     const { testName, gameInputs } = await req.json()
-
-    // Select the model (gemini-1.5-flash is fast and cost-effective)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
 
     const prompt = `
       You are an expert psychometrics and emotional health AI analyzer.
@@ -20,10 +17,14 @@ export async function POST(req) {
       Be encouraging, objective, and easy to understand.
     `
 
-    const result = await model.generateContent(prompt)
-    const analysisText = result.response.text()
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+    })
 
-    return NextResponse.json({ success: true, insight: analysisText })
+    const insight = response.text
+
+    return NextResponse.json({ success: true, insight })
   } catch (error) {
     console.error('Gemini API Error:', error)
     return NextResponse.json(
