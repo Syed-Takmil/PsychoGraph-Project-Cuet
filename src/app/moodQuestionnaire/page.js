@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Sparkles, HeartPulse, CheckCircle, ArrowRight } from 'lucide-react'
 import { markCompleted, getNextActivity } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 
 export default function MoodPage() {
   const router = useRouter()
@@ -23,8 +24,8 @@ export default function MoodPage() {
   const handleSubmit = (e) => {
     e.preventDefault()
     
-    // Mark this activity complete in localStorage
     markCompleted('/moodQuestionnaire')
+    saveActivityResult('/moodQuestionnaire', { emoji: selectedEmoji, energyLevel, stressLevel })
     setSubmitted(true)
 
     // Optional: Auto redirect to next activity after a short delay

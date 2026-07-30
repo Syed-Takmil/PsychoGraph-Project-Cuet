@@ -6,6 +6,7 @@ import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
 import { usePsychograph } from '@/context/PsychographContext'
 import { analyzeTestWithGemini } from '@/lib/geminiAnalysis'
+import { saveActivityResult } from '@/lib/activityResults'
 
 const LEVELS = [
   { label: 'Easy', targetCount: 4, duration: 25, speed: { min: 0.4, max: 1.2 }, dangerAt: 0, shrinkAt: 18 },
@@ -104,6 +105,7 @@ export default function ClickAccuracyGame() {
     }
 
     recordTestResult('clickAccuracy', payload)
+    saveActivityResult('/clickAccuracy', payload)
 
     setIsAnalyzing(true)
     analyzeTestWithGemini('Click Accuracy Challenge', payload)

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import RequireAuth from '@/components/RequireAuth'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 
 const COLORS = [
   { name: 'RED', hex: '#e74c3c', key: 'red' },
@@ -34,8 +35,14 @@ export default function EmotionStroopTest() {
   const [startTime, setStartTime] = useState(null)
 
   useEffect(() => {
-    if (gameState === 'results') markCompleted('/stroopTest')
-  }, [gameState])
+    if (gameState === 'results') {
+      markCompleted('/stroopTest')
+      const avg = responseTimes.length > 0
+        ? Math.round(responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length)
+        : 0
+      saveActivityResult('/stroopTest', { score, avgTime: avg, responseTimes })
+    }
+  }, [gameState, score, responseTimes])
 
   const startTest = () => {
     setGameState('playing')

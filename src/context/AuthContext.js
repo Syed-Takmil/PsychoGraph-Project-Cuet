@@ -1,17 +1,17 @@
 'use client'
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext(null)
 
-function getInitialAuth() {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth') === 'true'
-  }
-  return false
-}
-
 export function AuthProvider({ children }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(getInitialAuth)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    setTimeout(() => {
+      const stored = localStorage.getItem('auth') === 'true'
+      if (stored !== isAuthenticated) setIsAuthenticated(stored)
+    }, 0)
+  }, [isAuthenticated])
 
   const login = () => {
     localStorage.setItem('auth', 'true')

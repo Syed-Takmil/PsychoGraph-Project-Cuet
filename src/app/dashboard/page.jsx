@@ -1,53 +1,34 @@
-// File: app/dashboard/page.js
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import CognitiveTrendChart from '@/components/CognitiveTrendChart'
+import { getActivityResults } from '@/lib/activityResults'
+import ACTIVITY_ORDER from '@/lib/activityOrder'
+
+const ALL_PATHS = ACTIVITY_ORDER.map(a => a.path)
 
 export default function Dashboard() {
-  const [history, setHistory] = useState([])
-  const [latestAiReport, setLatestAiReport] = useState(null)
+  const [history] = useState(() => {
+    try {
+      const saved = localStorage.getItem('psychograph_session_history')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [latestAiReport, setLatestAiReport] = useState(() => {
+    try {
+      const saved = localStorage.getItem('latest_ai_report')
+      return saved ? JSON.parse(saved) : null
+    } catch { return null }
+  })
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [activityResults] = useState(() => getActivityResults())
 
-  // Load all saved session data on mount
-  useEffect(() => {
-    // 1. Fetch AI Report
-    const savedReport = localStorage.getItem('latest_ai_report')
-    if (savedReport) {
-      try {
-        setLatestAiReport(JSON.parse(savedReport))
-      } catch (e) {
-        console.error('Failed to parse AI report from localStorage', e)
-      }
-    }
+  const completedCount = ALL_PATHS.filter(p => activityResults[p]).length
 
-    // 2. Fetch Historical Sessions
-    const savedHistory = localStorage.getItem('psychograph_session_history')
-    if (savedHistory) {
-      try {
-        setHistory(JSON.parse(savedHistory))
-      } catch (e) {
-        console.error('Failed to parse history from localStorage', e)
-      }
-    }
-  }, [])
-
-  // Dynamic Aggregated Metrics
-  const totalSessions = history.length
-  const avgCognitiveIndex = totalSessions > 0
-    ? Math.round(history.reduce((acc, curr) => acc + (curr.cognitiveIndex || 0), 0) / totalSessions)
-    : 0
-
-  // Format dynamic chart data from stored history
-  const chartData = history.map((session, idx) => ({
-    date: session.dateLabel || `Session ${idx + 1}`,
-    cognitiveScore: session.cognitiveIndex || 0,
-    sleepHours: session.sleepHours || 7.0
-  }))
-
-  // Trigger a new AI analysis across all combined metrics
-  const triggerFreshAnalysis = async () => {
-    if (history.length === 0) return
+  const triggerAnalysis = useCallback(async (results) => {
+    if (!results) results = getActivityResults()
+    const comp = ALL_PATHS.filter(p => results[p]).length
+    if (comp === 0) return
     setIsAnalyzing(true)
 
     try {
@@ -55,10 +36,9 @@ export default function Dashboard() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          activityResults: results,
+          totalActivities: comp,
           userId: 'usr_demo',
-          totalSessions,
-          avgCognitiveIndex,
-          recentSessions: history.slice(-5) // Send last 5 sessions
         })
       })
 
@@ -68,52 +48,92 @@ export default function Dashboard() {
         localStorage.setItem('latest_ai_report', JSON.stringify(result.data))
       }
     } catch (err) {
-      console.error('Failed to re-analyze with Gemini:', err)
+      console.error('Failed to analyze with Gemini:', err)
     } finally {
       setIsAnalyzing(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (completedCount === ALL_PATHS.length && !latestAiReport) {
+      setTimeout(() => triggerAnalysis(activityResults), 0)
+    }
+  }, [])
+
+  const totalSessions = history.length
+  const avgCognitiveIndex = totalSessions > 0
+    ? Math.round(history.reduce((acc, curr) => acc + (curr.cognitiveIndex || 0), 0) / totalSessions)
+    : 0
+
+  const chartData = history.map((session, idx) => ({
+    date: session.dateLabel || `Session ${idx + 1}`,
+    cognitiveScore: session.cognitiveIndex || 0,
+    sleepHours: session.sleepHours || 7.0
+  }))
 
   return (
     <div className="min-h-screen dark:bg-gray-900 text-white p-6 max-w-6xl mx-auto space-y-6">
-      {/* HEADER */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-800 pb-4">
         <div>
           <h1 className="text-3xl font-bold text-indigo-400">PsychoGraph Dashboard</h1>
           <p className="text-gray-400 text-sm">Real-time Dynamic Cognitive Tracking & AI Insights</p>
         </div>
         <button
-          onClick={triggerFreshAnalysis}
-          disabled={isAnalyzing || history.length === 0}
+          onClick={() => triggerAnalysis()}
+          disabled={isAnalyzing || completedCount === 0}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition disabled:opacity-50"
         >
           {isAnalyzing ? 'Analyzing with Gemini...' : 'Re-Run AI Analysis'}
         </button>
       </header>
 
-      {/* DYNAMIC METRICS SUMMARY CARDS */}
+      {/* ACTIVITY PROGRESS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-gray-800 p-5 rounded-2xl border border-gray-700">
+          <span className="text-xs text-gray-400 uppercase tracking-wider block">Activities Completed</span>
+          <div className="text-2xl font-bold text-white mt-1">{completedCount} / {ALL_PATHS.length}</div>
+        </div>
         <div className="bg-gray-800 p-5 rounded-2xl border border-gray-700">
           <span className="text-xs text-gray-400 uppercase tracking-wider block">Total Sessions</span>
           <div className="text-2xl font-bold text-white mt-1">{totalSessions}</div>
         </div>
-
         <div className="bg-gray-800 p-5 rounded-2xl border border-gray-700">
           <span className="text-xs text-gray-400 uppercase tracking-wider block">Avg Cognitive Index</span>
           <div className="text-2xl font-bold text-indigo-400 mt-1">
             {totalSessions > 0 ? `${avgCognitiveIndex} / 100` : '--'}
           </div>
         </div>
-
-        <div className="bg-gray-800 p-5 rounded-2xl border border-gray-700">
-          <span className="text-xs text-gray-400 uppercase tracking-wider block">Current Predicted Mood</span>
-          <div className="text-2xl font-bold text-sky-400 mt-1">
-            {latestAiReport ? latestAiReport.predictedMood : 'No Data'}
-          </div>
-        </div>
       </div>
 
-      {/* DYNAMIC HISTORICAL CHART */}
+      {/* ACTIVITY RESULTS CARD */}
+      {completedCount > 0 && (
+        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Activity Results</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            {ALL_PATHS.map((path) => {
+              const hasResult = !!activityResults[path]
+              const activity = ACTIVITY_ORDER.find(a => a.path === path)
+              return (
+                <div
+                  key={path}
+                  className={`p-3 rounded-xl text-center text-sm border ${
+                    hasResult
+                      ? 'bg-indigo-900/30 border-indigo-700/50 text-indigo-300'
+                      : 'bg-gray-900/30 border-gray-700/30 text-gray-500'
+                  }`}
+                >
+                  <div className="font-medium truncate">{activity?.label || path.replace('/', '')}</div>
+                  <div className={`text-xs mt-1 ${hasResult ? 'text-green-400' : 'text-gray-600'}`}>
+                    {hasResult ? '✓ Completed' : 'Pending'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* COGNITIVE TREND CHART */}
       <CognitiveTrendChart data={chartData.length > 0 ? chartData : undefined} />
 
       {/* GEMINI AI INSIGHTS CARD */}
@@ -149,7 +169,11 @@ export default function Dashboard() {
         </div>
       ) : (
         <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 text-center text-gray-400 text-sm">
-          No recent analysis available. Complete test activities to generate dynamic AI reports.
+          {isAnalyzing
+            ? 'Analyzing your activity results with Gemini...'
+            : completedCount === ALL_PATHS.length
+              ? 'Analysis complete! Loading results...'
+              : `Complete all ${ALL_PATHS.length} activities to generate your AI-powered assessment.`}
         </div>
       )}
     </div>

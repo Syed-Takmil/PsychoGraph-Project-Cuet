@@ -1,20 +1,23 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useSyncExternalStore } from 'react'
 import { FileText, Download, CheckCircle, Brain, Calendar, ShieldAlert } from 'lucide-react'
+
+const subscribe = () => () => {}
+const getDateSnapshot = () => new Date().toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+})
+const getServerSnapshot = () => ''
 
 export default function ReportsPage() {
   const reportRef = useRef(null)
+  const currentDate = useSyncExternalStore(subscribe, getDateSnapshot, getServerSnapshot)
 
   const handleDownloadPDF = () => {
     window.print()
   }
-
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
 
   return (
     <div className="p-6 md:p-10 max-w-4xl mx-auto space-y-8">

@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import RequireAuth from '@/components/RequireAuth'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 import { usePsychograph } from '@/context/PsychographContext'
 import {
   Chart as ChartJS,
@@ -87,12 +88,17 @@ export default function VisualPreferenceTest() {
   useEffect(() => {
     if (gameState === 'complete' && resultsSummary) {
       markCompleted('/visualPreference')
+      saveActivityResult('/visualPreference', {
+        tally: emotionTally,
+        dominantEmotion: resultsSummary.dominant,
+        score: resultsSummary.score,
+        resilienceScore: Math.round((resultsSummary.score / MAX_SELECTIONS) * 100),
+      })
 
       recordTestResult('visualPreference', {
         tally: emotionTally,
         dominantEmotion: resultsSummary.dominant,
         score: resultsSummary.score,
-        // Convert score to 0-100 scale for radar/psychograph
         resilienceScore: Math.round((resultsSummary.score / MAX_SELECTIONS) * 100),
       })
     }

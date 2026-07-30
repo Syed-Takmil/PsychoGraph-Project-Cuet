@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import RequireAuth from '@/components/RequireAuth'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 
 const TOTAL_ATTEMPTS = 5
 
@@ -20,8 +21,18 @@ export default function AdvancedReactionTest() {
   const [lastTime, setLastTime] = useState(null)
 
   useEffect(() => {
-    if (gameState === 'complete') markCompleted('/reactionTest')
-  }, [gameState])
+    if (gameState === 'complete') {
+      markCompleted('/reactionTest')
+      const a = reactionTimes.length > 0
+        ? Math.round(reactionTimes.reduce((s, v) => s + v, 0) / reactionTimes.length)
+        : 0
+      const f = reactionTimes.length > 0 ? Math.min(...reactionTimes) : 0
+      const v = reactionTimes.length > 1
+        ? reactionTimes.reduce((sum, val) => sum + Math.pow(val - a, 2), 0) / reactionTimes.length
+        : 0
+      saveActivityResult('/reactionTest', { avgTime: a, fastestTime: f, consistencyScore: Math.round(Math.sqrt(v)), falseStarts, reactionTimes })
+    }
+  }, [gameState, falseStarts, reactionTimes])
 
   const timeoutRef = useRef(null)
 

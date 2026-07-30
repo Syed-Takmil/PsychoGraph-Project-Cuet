@@ -4,10 +4,8 @@ import Link from 'next/link'
 import Button from '@/components/Button'
 import RadarChart from '@/components/RadarChart'
 import { fadeUp, staggerContainer } from './animations'
-import { authClient } from '@/lib/auth-client'
 
 export default function HeroSection() {
-  const { data:session } =  authClient.useSession();
   return (
     <section className="pt-40 pb-20 px-6 max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center min-h-[90vh]">
       <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="max-w-xl">

@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import NextActivity from '@/components/NextActivity'
 import { markCompleted } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 
 const TILE_COUNT = 9
 const FLASH_DURATION = 400
@@ -22,8 +23,11 @@ export default function PatternMemoryGame() {
   const [round, setRound] = useState(1)
 
   useEffect(() => {
-    if (gameState === 'complete') markCompleted('/patternMemory')
-  }, [gameState])
+    if (gameState === 'complete') {
+      markCompleted('/patternMemory')
+      saveActivityResult('/patternMemory', { roundsCompleted: round - 1 })
+    }
+  }, [gameState, round])
 
   const [activeTile, setActiveTile] = useState(null)
   const [highScore, setHighScore] = useState(0)

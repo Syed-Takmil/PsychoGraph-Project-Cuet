@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import NextActivity from '@/components/NextActivity'
+import { markCompleted } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 
 // Game Configuration
 const EMOJI_POOL = ['🐶', '🐱', '🐼', '🦊', '🐸', '🐨', '🍎', '🍕', '🚀', '🎯', '💎', '🎲']
@@ -151,9 +154,10 @@ export default function MemoryGame() {
             if (currentLevel + 1 < LEVELS.length) {
               startLevel(currentLevel + 1)
             } else {
-              // Game Complete -> Analyze Data
               const finalReport = generateReportAndMood(telemetry.current)
               setReport(finalReport)
+              markCompleted('/memoryCard')
+              saveActivityResult('/memoryCard', finalReport)
               setGameState('complete')
             }
           }, 800)
@@ -259,6 +263,9 @@ export default function MemoryGame() {
             >
               Play Again
             </button>
+            <div className="mt-3">
+              <NextActivity currentPath="/memoryCard" />
+            </div>
           </div>
         )}
 

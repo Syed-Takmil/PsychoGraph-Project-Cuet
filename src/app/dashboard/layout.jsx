@@ -14,7 +14,8 @@ import {
   LogOut,
   ChevronRight,
   Brain,
-  Home
+  Home,
+  BrainCircuit
 } from 'lucide-react'
 import { authClient } from '@/lib/auth-client'
 import { useRouter } from 'next/navigation'
@@ -42,6 +43,7 @@ export default function DashboardLayout({ children }) {
     { label: 'Mood Check-in', href: '/dashboard/mood', icon: Smile },
     { label: 'Psychograph Score', href: '/dashboard/psychograph', icon: BarChart3 },
     { label: 'Download Reports', href: '/dashboard/reports', icon: FileText },
+    { label: 'AI Suggestions', href: '/dashboard/suggestions', icon: BrainCircuit },
     { label: 'Update Profile', href: '/dashboard/profile', icon: User },
   ]
 
