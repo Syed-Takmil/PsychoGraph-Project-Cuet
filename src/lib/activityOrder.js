@@ -1,11 +1,11 @@
 const ACTIVITY_ORDER = [
-  { label: 'Mood Questionnaire', path: '/moodQuestionnaire' },
-  { label: 'Stroop Test', path: '/stroopTest' },
-  { label: 'Memory Card', path: '/memoryCard' },
-  { label: 'Pattern Memory', path: '/patternMemory' },
-  { label: 'Click Accuracy', path: '/clickAccuracy' },
-  { label: 'Reaction Test', path: '/reactionTest' },
-  { label: 'Visual Preference', path: '/visualPreference' },
+  { label: 'Mood Questionnaire', path: '/activities/moodQuestionnaire' },
+  { label: 'Stroop Test', path: '/activities/stroopTest' },
+  { label: 'Memory Card', path: '/activities/memoryCard' },
+  { label: 'Pattern Memory', path: '/activities/patternMemory' },
+  { label: 'Click Accuracy', path: '/activities/clickAccuracy' },
+  { label: 'Reaction Test', path: '/activities/reactionTest' },
+  { label: 'Visual Preference', path: '/activities/visualPreference' },
 ]
 
 export function getNextActivity(currentPath) {

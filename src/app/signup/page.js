@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Dialog from '@/components/Dialog'
-import { useAuth } from '@/context/AuthContext'
 import { createAuthClient } from 'better-auth/client'
 
 const authClient = createAuthClient()
@@ -52,7 +51,6 @@ const initialForm = {
 
 export default function SignUpPage() {
   const router = useRouter()
-  const { login } = useAuth()
   const [form, setForm] = useState(initialForm)
   const [message, setMessage] = useState({ text: '', type: '' })
   const [showTerms, setShowTerms] = useState(false)

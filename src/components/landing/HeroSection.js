@@ -19,7 +19,7 @@ export default function HeroSection() {
           Psychograph bypasses biased, direct self-reporting questions. By tracking micro-journaling cadence, visual resonance, and real-time interaction biometrics, it reveals your subconscious shape.
         </motion.p>
         <motion.div variants={fadeUp} className="flex flex-wrap gap-4">
-          <Link href='/clickAccuracy'><Button>Begin assessment pipeline</Button></Link>
+          <Link href='/activities/moodQuestionnaire'><Button>Begin assessment pipeline</Button></Link>
         </motion.div>
       </motion.div>
 

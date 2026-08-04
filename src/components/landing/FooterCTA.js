@@ -3,7 +3,6 @@ import { useSyncExternalStore } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Button from '@/components/Button'
-import { useAuth } from '@/context/AuthContext'
 import { fadeUp } from './animations'
 
 const subscribe = () => () => {}
@@ -11,7 +10,6 @@ const getClientSnapshot = () => true
 const getServerSnapshot = () => false
 
 export default function FooterCTA() {
-  const { isAuthenticated } = useAuth()
   const mounted = useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
   return (
     <section className="py-40 px-6 text-center">
@@ -21,7 +19,7 @@ export default function FooterCTA() {
         </h2>
         <p className="text-gray-500 dark:text-gray-400 mb-10">No account required to extract initial balance parameters.<br />Save generated models locally or persist to a decentralized baseline map.</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Link href={mounted && isAuthenticated ? '/clickAccuracy' : '/signup'}><Button>Begin parsing sequences</Button></Link>
+          <Link href={mounted ? '/clickAccuracy' : '/signup'}><Button>Begin parsing sequences</Button></Link>
         </div>
       </motion.div>
     </section>

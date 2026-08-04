@@ -1,21 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Sparkles, HeartPulse, CheckCircle, Loader2 } from 'lucide-react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Sparkles, HeartPulse, CheckCircle, ArrowRight } from 'lucide-react'
+import { markCompleted, getNextActivity } from '@/lib/activityProgress'
+import { saveActivityResult } from '@/lib/activityResults'
 import { authClient } from '@/lib/auth-client'
 
-const GUEST_FALLBACK_ID = 'guest_user'
-
 export default function MoodPage() {
-  const { data: session, isPending } = authClient.useSession()
-  const activeUserId = session?.user?.id || session?.session?.userId || GUEST_FALLBACK_ID
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
+  const activeUserId = session?.user?.id || session?.session?.userId || 'guest_user'
 
   const [selectedEmoji, setSelectedEmoji] = useState('😊')
   const [energyLevel, setEnergyLevel] = useState(3)
   const [stressLevel, setStressLevel] = useState(2)
   const [submitted, setSubmitted] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(true)
 
   const emojis = [
     { symbol: '😭', label: 'Overwhelmed' },
@@ -25,43 +25,23 @@ export default function MoodPage() {
     { symbol: '🔥', label: 'Energized' },
   ]
 
-  // FETCH PREVIOUSLY SAVED MOOD ON MOUNT/REFRESH
-  useEffect(() => {
-    if (isPending) return
-
-    async function loadSavedMood() {
-      try {
-        setFetching(true)
-        const res = await fetch(`http://localhost:5000/api/psychograph/results/${activeUserId}`)
-        const result = await res.json()
-
-        if (result.success && result.data?.moodQuestionnaire) {
-          const mood = result.data.moodQuestionnaire
-          if (mood.emoji) setSelectedEmoji(mood.emoji)
-          if (mood.energyLevel) setEnergyLevel(mood.energyLevel)
-          if (mood.stressLevel) setStressLevel(mood.stressLevel)
-        }
-      } catch (err) {
-        console.error('Failed to load saved mood logs:', err)
-      } finally {
-        setFetching(false)
-      }
-    }
-
-    loadSavedMood()
-  }, [activeUserId, isPending])
-
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setLoading(true)
-
-    const moodData = {
-      emoji: selectedEmoji,
-      energyLevel,
+    
+    const activityPath = '/activities/moodQuestionnaire'
+    const moodData = { 
+      emoji: selectedEmoji, 
+      energyLevel, 
       stressLevel,
-      completedAt: new Date().toISOString()
+      submittedAt: new Date().toISOString()
     }
 
+    // Mark completed & save local results
+    markCompleted(activityPath)
+    saveActivityResult(activityPath, moodData)
+    setSubmitted(true)
+
+    // Save telemetry to unified MongoDB backend route with activeUserId
     try {
       await fetch('http://localhost:5000/api/psychograph/save-results', {
         method: 'POST',
@@ -69,35 +49,22 @@ export default function MoodPage() {
         body: JSON.stringify({
           userId: activeUserId,
           gameName: 'moodQuestionnaire',
-          metrics: moodData,
+          metrics: moodData
         }),
       })
-
-      fetch('http://localhost:5000/api/gemini', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: activeUserId,
-          forceRefresh: true,
-        }),
-      }).catch((err) => console.error('Failed to trigger background Gemini synthesis:', err))
-
-      setSubmitted(true)
-      setTimeout(() => setSubmitted(false), 3000)
     } catch (err) {
-      console.error('Failed to dispatch Mood telemetry:', err)
-    } finally {
-      setLoading(false)
+      console.error('Failed to dispatch Mood Questionnaire telemetry:', err)
     }
-  }
 
-  if (fetching || isPending) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
-        <p className="text-sm font-medium text-gray-500">Retrieving your mood log...</p>
-      </div>
-    )
+    // Redirect to the next activity (stroopTest) after a short delay
+    setTimeout(() => {
+      const next = getNextActivity(activityPath)
+      if (next) {
+        router.push(next.path)
+      } else {
+        router.push('/activities/stroopTest')
+      }
+    }, 1500)
   }
 
   return (
@@ -112,13 +79,15 @@ export default function MoodPage() {
       </div>
 
       {submitted && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-2xl flex items-center gap-3 text-green-600 dark:text-green-400 text-sm font-medium">
+        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-2xl flex items-center gap-3 text-green-600 dark:text-green-400 text-sm font-medium animate-fadeIn">
           <CheckCircle className="w-5 h-5 shrink-0" />
-          Mood log captured! Linked to today's assessment run.
+          Mood log captured! Redirecting to next activity...
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-white/10 p-6 md:p-8 rounded-3xl shadow-sm space-y-8">
+        
+        {/* MOOD EMOJI SELECTOR */}
         <div>
           <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-4">
             How are you feeling right now?
@@ -142,6 +111,7 @@ export default function MoodPage() {
           </div>
         </div>
 
+        {/* ENERGY LEVEL */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
@@ -158,7 +128,7 @@ export default function MoodPage() {
                 className={`flex-1 py-3 rounded-xl border font-bold text-sm transition-all cursor-pointer ${
                   energyLevel >= lvl 
                     ? 'bg-amber-500 text-white border-amber-500' 
-                    : 'border-gray-200 dark:border-white/10 text-gray-400'
+                    : 'border-gray-200 dark:border-white/10 text-gray-400 hover:border-amber-300'
                 }`}
               >
                 {lvl}
@@ -167,6 +137,7 @@ export default function MoodPage() {
           </div>
         </div>
 
+        {/* STRESS LEVEL */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
@@ -183,7 +154,7 @@ export default function MoodPage() {
                 className={`flex-1 py-3 rounded-xl border font-bold text-sm transition-all cursor-pointer ${
                   stressLevel >= lvl 
                     ? 'bg-pink-500 text-white border-pink-500' 
-                    : 'border-gray-200 dark:border-white/10 text-gray-400'
+                    : 'border-gray-200 dark:border-white/10 text-gray-400 hover:border-pink-300'
                 }`}
               >
                 {lvl}
@@ -194,11 +165,12 @@ export default function MoodPage() {
 
         <button
           type="submit"
-          disabled={loading}
-          className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all cursor-pointer disabled:opacity-50"
+          className="w-full py-3.5 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
-          {loading ? 'Saving Log...' : 'Submit Mood Log'}
+          <span>Submit Mood Log & Continue</span>
+          <ArrowRight className="w-4 h-4" />
         </button>
+
       </form>
     </div>
   )

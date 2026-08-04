@@ -1,21 +1,99 @@
 'use client'
 
-import { useState } from 'react'
-import { Moon, Droplets, Save, CheckCircle, Flame, BatteryCharging } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Moon, Droplets, Save, CheckCircle, Loader2 } from 'lucide-react'
+import { authClient } from '@/lib/auth-client'
+
+const GUEST_FALLBACK_ID = 'guest_user'
 
 export default function DailyLogsPage() {
+  const { data: session, isPending } = authClient.useSession()
+  const activeUserId = session?.user?.id || session?.session?.userId || GUEST_FALLBACK_ID
+
   const [sleepHours, setSleepHours] = useState(7.5)
   const [sleepQuality, setSleepQuality] = useState('Restful')
   const [waterIntake, setWaterIntake] = useState(2.25)
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  // 1. FETCH PREVIOUSLY SAVED DATA FROM MONGO ON MOUNT/REFRESH
+  useEffect(() => {
+    if (isPending) return
+
+    async function loadSavedLogs() {
+      try {
+        setFetching(true)
+        const res = await fetch(`http://localhost:5000/api/psychograph/results/${activeUserId}`)
+        const result = await res.json()
+
+        if (result.success && result.data?.dailyLogs) {
+          const logs = result.data.dailyLogs
+          if (logs.sleepHours !== undefined) setSleepHours(logs.sleepHours)
+          if (logs.sleepQuality !== undefined) setSleepQuality(logs.sleepQuality)
+          if (logs.waterIntake !== undefined) setWaterIntake(logs.waterIntake)
+        }
+      } catch (err) {
+        console.error('Failed to load saved daily logs:', err)
+      } finally {
+        setFetching(false)
+      }
+    }
+
+    loadSavedLogs()
+  }, [activeUserId, isPending])
+
+  // 2. SAVE DATA TO MONGO
+  const handleSave = async () => {
+    setLoading(true)
+
+    const dailyData = {
+      sleepHours,
+      sleepQuality,
+      waterIntake,
+      completedAt: new Date().toISOString()
+    }
+
+    try {
+      await fetch('http://localhost:5000/api/psychograph/save-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: activeUserId,
+          gameName: 'dailyLogs',
+          metrics: dailyData,
+        }),
+      })
+
+      fetch('http://localhost:5000/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: activeUserId,
+          forceRefresh: true,
+        }),
+      }).catch((err) => console.error('Failed to trigger background Gemini synthesis:', err))
+
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (err) {
+      console.error('Failed to dispatch Daily Logs telemetry:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const addWater = (amount) => {
     setWaterIntake((prev) => Math.min(5, Math.max(0, +(prev + amount).toFixed(2))))
+  }
+
+  if (fetching || isPending) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+        <p className="text-sm font-medium text-gray-500">Retrieving your saved logs...</p>
+      </div>
+    )
   }
 
   return (
@@ -30,14 +108,13 @@ export default function DailyLogsPage() {
       </div>
 
       {saved && (
-        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-2xl flex items-center gap-3 text-green-600 dark:text-green-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+        <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-2xl flex items-center gap-3 text-green-600 dark:text-green-400 text-sm font-medium">
           <CheckCircle className="w-5 h-5 shrink-0" />
           Daily logs updated successfully! Your Psychograph score has been refreshed.
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
         {/* SLEEP TRACKER CARD */}
         <div className="bg-white dark:bg-gray-900/60 border border-gray-200 dark:border-white/10 p-6 rounded-3xl shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/5 pb-4">
@@ -81,8 +158,9 @@ export default function DailyLogsPage() {
               {['Restless', 'Restful', 'Deep & Rejuvenating'].map((q) => (
                 <button
                   key={q}
+                  type="button"
                   onClick={() => setSleepQuality(q)}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-all ${
+                  className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
                     sleepQuality === q 
                       ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm'
                       : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
@@ -138,8 +216,9 @@ export default function DailyLogsPage() {
               {[0.25, 0.5, 1.0].map((amt) => (
                 <button
                   key={amt}
+                  type="button"
                   onClick={() => addWater(amt)}
-                  className="py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-300 transition-all text-gray-700 dark:text-gray-300"
+                  className="py-2.5 px-3 rounded-xl text-xs font-medium border border-gray-200 dark:border-white/10 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:border-blue-300 transition-all text-gray-700 dark:text-gray-300 cursor-pointer"
                 >
                   +{amt} L
                 </button>
@@ -147,16 +226,16 @@ export default function DailyLogsPage() {
             </div>
           </div>
         </div>
-
       </div>
 
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          disabled={loading}
+          className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-2xl shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
         >
           <Save className="w-5 h-5" />
-          Save Daily Entry
+          {loading ? 'Saving Entry...' : 'Save Daily Entry'}
         </button>
       </div>
     </div>

@@ -4,71 +4,111 @@ import { useEffect, useState, useCallback } from 'react'
 import CognitiveTrendChart from '@/components/CognitiveTrendChart'
 import { getActivityResults } from '@/lib/activityResults'
 import ACTIVITY_ORDER from '@/lib/activityOrder'
+import { authClient } from '@/lib/auth-client'
 
 const ALL_PATHS = ACTIVITY_ORDER.map(a => a.path)
+const GUEST_FALLBACK_ID = 'guest_user'
 
 export default function Dashboard() {
+  const { data: session, isPending } = authClient.useSession()
+  const activeUserId = session?.user?.id || session?.session?.userId || GUEST_FALLBACK_ID
+
   const [history] = useState(() => {
     try {
       const saved = localStorage.getItem('psychograph_session_history')
       return saved ? JSON.parse(saved) : []
     } catch { return [] }
   })
+  
   const [latestAiReport, setLatestAiReport] = useState(() => {
     try {
       const saved = localStorage.getItem('latest_ai_report')
       return saved ? JSON.parse(saved) : null
     } catch { return null }
   })
+  
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [activityResults] = useState(() => getActivityResults())
 
   const completedCount = ALL_PATHS.filter(p => activityResults[p]).length
 
-  const triggerAnalysis = useCallback(async (results) => {
-    if (!results) results = getActivityResults()
-    const comp = ALL_PATHS.filter(p => results[p]).length
-    if (comp === 0) return
+  // Helper function to GET the analysis from backend
+  const fetchAnalysis = useCallback(async (userId) => {
+    try {
+      const getRes = await fetch(`http://localhost:5000/api/gemini/${userId}`)
+      const getResult = await getRes.json()
+      if (getResult.success && getResult.data) {
+        setLatestAiReport(getResult.data)
+        localStorage.setItem('latest_ai_report', JSON.stringify(getResult.data))
+      }
+    } catch (err) {
+      console.error('Failed to GET Gemini analysis:', err)
+    }
+  }, [])
+
+  // Trigger Gemini Analysis (POST) then Fetch Analysis (GET)
+  const triggerAnalysis = useCallback(async (force = false) => {
+    if (isPending) return
     setIsAnalyzing(true)
 
     try {
-      const res = await fetch('/api/analyze', {
+      // 1. Send POST request to generate/save Gemini analysis in DB
+      const res = await fetch('http://localhost:5000/api/gemini', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          activityResults: results,
-          totalActivities: comp,
-          userId: 'usr_demo',
+          userId: activeUserId,
+          forceRefresh: force,
         })
       })
 
-      const result = await res.json()
-      if (result.success) {
-        setLatestAiReport(result.data)
-        localStorage.setItem('latest_ai_report', JSON.stringify(result.data))
+      const postResult = await res.json()
+
+      // 2. Fetch the newly saved analysis via GET route
+      if (postResult.success) {
+        await fetchAnalysis(activeUserId)
       }
     } catch (err) {
-      console.error('Failed to analyze with Gemini:', err)
+      console.error('Failed to trigger Gemini analysis:', err)
     } finally {
       setIsAnalyzing(false)
     }
-  }, [])
+  }, [activeUserId, fetchAnalysis, isPending])
 
+  // Fetch Existing Saved Report via GET on Mount
   useEffect(() => {
-    if (completedCount === ALL_PATHS.length && !latestAiReport) {
-      setTimeout(() => triggerAnalysis(activityResults), 0)
+    if (isPending) return
+
+    async function loadSavedReport() {
+      try {
+        const res = await fetch(`http://localhost:5000/api/gemini/${activeUserId}`)
+        const result = await res.json()
+        if (result.success && result.data) {
+          setLatestAiReport(result.data)
+          localStorage.setItem('latest_ai_report', JSON.stringify(result.data))
+        } else if (completedCount > 0 && !latestAiReport) {
+          triggerAnalysis(false)
+        }
+      } catch (err) {
+        console.error('Failed to fetch existing analysis on mount:', err)
+        if (completedCount > 0 && !latestAiReport) {
+          triggerAnalysis(false)
+        }
+      }
     }
-  }, [])
+
+    loadSavedReport()
+  }, [activeUserId, isPending, completedCount, latestAiReport, triggerAnalysis])
 
   const totalSessions = history.length
   const avgCognitiveIndex = totalSessions > 0
     ? Math.round(history.reduce((acc, curr) => acc + (curr.cognitiveIndex || 0), 0) / totalSessions)
     : 0
 
-  const chartData = history.map((session, idx) => ({
-    date: session.dateLabel || `Session ${idx + 1}`,
-    cognitiveScore: session.cognitiveIndex || 0,
-    sleepHours: session.sleepHours || 7.0
+  const chartData = history.map((sessionItem, idx) => ({
+    date: sessionItem.dateLabel || `Session ${idx + 1}`,
+    cognitiveScore: sessionItem.cognitiveIndex || 0,
+    sleepHours: sessionItem.sleepHours || 7.0
   }))
 
   return (
@@ -77,11 +117,16 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold text-indigo-400">PsychoGraph Dashboard</h1>
           <p className="text-gray-400 text-sm">Real-time Dynamic Cognitive Tracking & AI Insights</p>
+          {session?.user?.name && (
+            <p className="text-xs text-purple-400 mt-1 font-medium">
+              Subject: {session.user.name} ({activeUserId})
+            </p>
+          )}
         </div>
         <button
-          onClick={() => triggerAnalysis()}
-          disabled={isAnalyzing || completedCount === 0}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition disabled:opacity-50"
+          onClick={() => triggerAnalysis(true)}
+          disabled={isAnalyzing || isPending || completedCount === 0}
+          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-semibold transition disabled:opacity-50 cursor-pointer"
         >
           {isAnalyzing ? 'Analyzing with Gemini...' : 'Re-Run AI Analysis'}
         </button>
@@ -122,7 +167,7 @@ export default function Dashboard() {
                       : 'bg-gray-900/30 border-gray-700/30 text-gray-500'
                   }`}
                 >
-                  <div className="font-medium truncate">{activity?.label || path.replace('/', '')}</div>
+                  <div className="font-medium truncate">{activity?.label || path.replace('/activities/', '')}</div>
                   <div className={`text-xs mt-1 ${hasResult ? 'text-green-400' : 'text-gray-600'}`}>
                     {hasResult ? '✓ Completed' : 'Pending'}
                   </div>
@@ -138,42 +183,71 @@ export default function Dashboard() {
 
       {/* GEMINI AI INSIGHTS CARD */}
       {latestAiReport ? (
-        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl space-y-4">
+        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl space-y-5">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase tracking-widest text-indigo-400 font-bold">
-              Gemini AI Report
+              Gemini 2.0 AI Psychograph Summary
             </span>
-            <span className="bg-indigo-950 text-indigo-300 px-3 py-1 rounded-full text-xs font-semibold border border-indigo-700">
-              Cognitive Index: {latestAiReport.cognitiveIndex}
-            </span>
+            {latestAiReport.radarScores?.cognitiveSpeed && (
+              <span className="bg-indigo-950 text-indigo-300 px-3 py-1 rounded-full text-xs font-semibold border border-indigo-700">
+                Speed Score: {latestAiReport.radarScores.cognitiveSpeed}/100
+              </span>
+            )}
           </div>
 
-          <div className="text-xl font-bold text-gray-100">
-            Current State: <span className="text-indigo-400">{latestAiReport.predictedMood}</span>
-          </div>
+          {latestAiReport.summary && (
+            <p className="text-gray-200 text-sm leading-relaxed bg-gray-900/50 p-4 rounded-xl border border-gray-700/50">
+              {latestAiReport.summary}
+            </p>
+          )}
 
-          <p className="text-gray-300 text-sm leading-relaxed bg-gray-900/50 p-4 rounded-xl border border-gray-700/50">
-            {latestAiReport.summary}
-          </p>
+          {/* RADAR METRICS BREAKDOWN */}
+          {latestAiReport.radarScores && (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
+              <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-700/40">
+                <span className="text-xs text-gray-400 block">Cognitive Speed</span>
+                <span className="text-lg font-bold text-indigo-400">{latestAiReport.radarScores.cognitiveSpeed}</span>
+              </div>
+              <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-700/40">
+                <span className="text-xs text-gray-400 block">Attention Focus</span>
+                <span className="text-lg font-bold text-indigo-400">{latestAiReport.radarScores.attentionFocus}</span>
+              </div>
+              <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-700/40">
+                <span className="text-xs text-gray-400 block">Memory Span</span>
+                <span className="text-lg font-bold text-indigo-400">{latestAiReport.radarScores.memorySpan}</span>
+              </div>
+              <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-700/40">
+                <span className="text-xs text-gray-400 block">Emotional Resilience</span>
+                <span className="text-lg font-bold text-indigo-400">{latestAiReport.radarScores.emotionalResilience}</span>
+              </div>
+              <div className="bg-gray-900/40 p-3 rounded-xl border border-gray-700/40">
+                <span className="text-xs text-gray-400 block">Sleep Hygiene</span>
+                <span className="text-lg font-bold text-indigo-400">{latestAiReport.radarScores.sleepHygiene}</span>
+              </div>
+            </div>
+          )}
 
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-              Tailored Suggestions
-            </h4>
-            <ul className="list-disc list-inside space-y-1 text-sm text-gray-200">
-              {latestAiReport.suggestions.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
-          </div>
+          {/* RECOMMENDATIONS */}
+          {latestAiReport.recommendations && latestAiReport.recommendations.length > 0 && (
+            <div>
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                Tailored Action Plan & Recommendations
+              </h4>
+              <ul className="list-disc list-inside space-y-1 text-sm text-gray-200">
+                {latestAiReport.recommendations.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 text-center text-gray-400 text-sm">
           {isAnalyzing
-            ? 'Analyzing your activity results with Gemini...'
-            : completedCount === ALL_PATHS.length
-              ? 'Analysis complete! Loading results...'
-              : `Complete all ${ALL_PATHS.length} activities to generate your AI-powered assessment.`}
+            ? 'Analyzing your activity telemetry with Google Gemini...'
+            : completedCount > 0
+              ? 'Click "Re-Run AI Analysis" to synthesize your completed test scores.'
+              : `Complete activities to generate your Gemini-powered Psychograph assessment.`}
         </div>
       )}
     </div>
