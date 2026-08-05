@@ -1,31 +1,32 @@
-# PsychoGraph: Cognitive & Behavioral Neuro-Telemetry Platform
+# PsychoGraph 🧠⚡: Advanced Cognitive & Neuro-Telemetry Profiling Platform
 
-PsychoGraph is an advanced web-based cognitive profiling and neuro-telemetry platform designed to map user cognition, attention, memory, and behavioral tendencies across multiple interactive paradigms. By combining reaction-time paradigms, psychometric evaluation, and generative AI synthesis, PsychoGraph aggregates and analyzes multi-dimensional mental telemetry.
-
----
-
-## Architecture & Technology Stack
-
-* **Frontend:** Next.js 16 (App Router), React, Tailwind CSS, Lucide Icons, SVG-based Radar/Spider charting.
-* **Backend:** Node.js, Express.js (ES Modules).
-* **Database:** MongoDB (`psychograph_db`), featuring upsert assessments and analysis caching.
-* **AI Engine:** Google Gemini SDK (`@google/generative-ai`) utilizing strict JSON response formatting for telemetry interpretation.
+PsychoGraph is an enterprise-grade, multi-dimensional web application engineered to map, analyze, and optimize human cognitive performance, memory capacity, psychomotor speed, and affective resilience. By blending gamified telemetry tasks with advanced generative AI analysis, PsychoGraph bridges the gap between everyday digital activity and clinical-grade neuropsychological profiling.
 
 ---
 
-## Interactive Assessment Modules & Telemetry Specifications
+## 🌟 Core Features & Platform Capabilities
 
-PsychoGraph evaluates users through a structured sequence of 7 activities. Each test is scientifically chosen to isolate distinct neurological and psychological metrics:
+* **Sequential Telemetry Pipeline:** A structured, guided 7-stage assessment flow featuring fluid navigation (`getNextActivity`, `getPrevActivity`) that walks users seamlessly from lifestyle questionnaires to rapid-fire neurological reaction tests.
+* **Dynamic SVG Psychograph Radar:** A custom-rendered, responsive spider/radar chart visualizing real-time performance across five core pillars (Cognitive Speed, Attention Focus, Memory Span, Emotional Resilience, and Sleep Hygiene).
+* **AI-Powered Deep Telemetry Analysis (Google Gemini):** Integrates Google's generative models (`gemini-2.5-flash`) with strict JSON schema parsing to generate personalized psychological overviews, highlighted strengths, and actionable wellness recommendations based on live user telemetry.
+* **Smart Caching & Database Architecture:** Powered by MongoDB with robust upsert logic and intelligent response-caching to preserve API quotas and ensure lightning-fast dashboard load times.
+* **Modern Glassmorphism UI:** Built with Next.js App Router, Tailwind CSS, and Lucide icons featuring seamless dark/light mode compatibility, animated loading skeletons, and interactive feedback toasts.
+
+---
+
+## 🕹️ Interactive Assessment Modules & Scientific Rationale
+
+PsychoGraph evaluates users through a meticulously sequenced 7-part battery. Each test isolates specific neurological pathways and collects granular performance telemetry:
 
 ### 1. Mood Questionnaire
-* **Description & Rules:** A subjective lifestyle and emotional baseline survey where users report sleep quality, perceived stress levels, daily affective state, and circadian habits.
+* **Description & Rules:** A baseline lifestyle, sleep, and emotional health survey where users log their daily affective tone, circadian habits, and subjective stress levels.
 * **Purpose:** Establishes the foundational contextual baseline for physiological and emotional well-being before active cognitive testing.
 * **Data Collected:** Self-reported sleep duration, subjective stress scores, energy levels, and mood valence.
 * **Health Prediction & Research Reference:** Sleep hygiene and affective baseline heavily modulate prefrontal cortex executive functioning. 
   * *Reference:* Walker, M. P. (2017). *Why We Sleep: Unlocking the Power of Sleep and Dreams*. Scribner. (Correlates sleep deprivation directly with impaired cognitive latency and emotional reactivity).
 
 ### 2. Stroop Test
-* **Description & Rules:** The classic Stroop effect paradigm. Users are presented with color words (e.g., "RED") printed in conflicting font colors (e.g., green). They must quickly choose or click the *ink color* while ignoring the semantic word meaning.
+* **Description & Rules:** The classic cognitive interference paradigm. Color words (e.g., "RED") are displayed in conflicting ink colors (e.g., green). Users must select the *ink color* while actively suppressing the automatic instinct to read the word.
 * **Purpose:** Measures cognitive interference, selective attention, and executive inhibition control.
 * **Data Collected:** Reaction latency in congruent vs. incongruent trials, error rate, and emotional resilience under cognitive friction.
 * **Health Prediction & Research Reference:** Deficits in Stroop interference control serve as a key marker for executive dysfunction, chronic stress, and attention-deficit patterns.
@@ -39,21 +40,21 @@ PsychoGraph evaluates users through a structured sequence of 7 activities. Each 
   * *Reference:* Baddeley, A. (1992). *Working memory*. Science, 255(5044), 556–559.
 
 ### 4. Pattern Memory
-* **Description & Rules:** A grid-based sequence memory game where an escalating pattern of tiles illuminates, and the user must replicate the sequence accurately.
+* **Description & Rules:** A grid-based sequence memory challenge where an escalating pattern of tiles illuminates, requiring the user to replicate the sequence accurately from memory.
 * **Purpose:** Assesses visuospatial span and sequential working memory load.
 * **Data Collected:** Maximum sequence level reached, correct sequential inputs, and error count.
 * **Health Prediction & Research Reference:** Visuospatial sequencing tracking provides insights into frontal-parietal network efficiency.
   * *Reference:* Funahashi, S. (2017). *Working memory in the prefrontal cortex*. Brain Sciences, 7(5), 49.
 
 ### 5. Click Accuracy
-* **Description & Rules:** Targets appear randomly across the screen viewport; users must react and click them with high precision within a strict time frame.
+* **Description & Rules:** Moving or appearing targets flash randomly across the viewport; users must react and click them with high precision within a strict time frame.
 * **Purpose:** Measures fine motor control, hand-eye coordination, and spatial impulse precision.
 * **Data Collected:** Click coordinates deviation from target center, missed clicks, and average precision delta.
 * **Health Prediction & Research Reference:** Psychomotor coordination degradation correlates with fatigue, neurological stress, and psychomotor slowing.
   * *Reference:* Schmidt, R. A., & Lee, T. D. (2011). *Motor Control and Learning: A Behavioral Emphasis*. Human Kinetics.
 
 ### 6. Reaction Test
-* **Description & Rules:** Simple and choice reaction time measurement. The screen shifts color unpredictably, and the user must press/click as fast as possible.
+* **Description & Rules:** Simple and choice reaction time measurement. The screen shifts color unpredictably, and the user must press/click as fast as possible upon stimulus onset.
 * **Purpose:** Quantifies basic processing speed and central nervous system transmission latency.
 * **Data Collected:** Millisecond (ms) response latency across multiple trials.
 * **Health Prediction & Research Reference:** Reaction time is a robust biomarker of central nervous system vitality, alertness, and central processing efficiency.
@@ -68,9 +69,18 @@ PsychoGraph evaluates users through a structured sequence of 7 activities. Each 
 
 ---
 
-## Getting Started & Installation
+## 🛠️ Technology Stack & Architecture
 
-### 1. Clone and Install Backend
+* **Frontend:** Next.js 16 (App Router), React, Tailwind CSS, Lucide Icons, SVG-based Radar/Spider charting.
+* **Backend:** Node.js, Express.js (ES Modules), CORS middleware.
+* **Database:** MongoDB (`psychograph_db`), featuring upsert assessments and analysis caching.
+* **AI Engine:** Google Gemini SDK (`@google/generative-ai`) utilizing strict JSON response formatting for telemetry interpretation.
+
+---
+
+## 🚀 Getting Started & Installation
+
+### 1. Backend Setup (`psychograph-backend`)
 ```bash
 cd psychograph-backend
 npm install
