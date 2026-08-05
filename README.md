@@ -8,7 +8,7 @@ PsychoGraph is an enterprise-grade, multi-dimensional web application engineered
 
 * **Sequential Telemetry Pipeline:** A structured, guided 7-stage assessment flow featuring fluid navigation (`getNextActivity`, `getPrevActivity`) that walks users seamlessly from lifestyle questionnaires to rapid-fire neurological reaction tests.
 * **Dynamic SVG Psychograph Radar:** A custom-rendered, responsive spider/radar chart visualizing real-time performance across five core pillars (Cognitive Speed, Attention Focus, Memory Span, Emotional Resilience, and Sleep Hygiene).
-* **AI-Powered Deep Telemetry Analysis (Google Gemini):** Integrates Google's generative models (`gemini-2.5-flash`) with strict JSON schema parsing to generate personalized psychological overviews, highlighted strengths, and actionable wellness recommendations based on live user telemetry.
+* **AI-Powered Deep Telemetry Analysis (Google Gemini):** Integrates Google's generative models (`gemini-3.6-flash`) with strict JSON schema parsing to generate personalized psychological overviews, highlighted strengths, and actionable wellness recommendations based on live user telemetry.
 * **Smart Caching & Database Architecture:** Powered by MongoDB with robust upsert logic and intelligent response-caching to preserve API quotas and ensure lightning-fast dashboard load times.
 * **Modern Glassmorphism UI:** Built with Next.js App Router, Tailwind CSS, and Lucide icons featuring seamless dark/light mode compatibility, animated loading skeletons, and interactive feedback toasts.
 
@@ -18,54 +18,253 @@ PsychoGraph is an enterprise-grade, multi-dimensional web application engineered
 
 PsychoGraph evaluates users through a meticulously sequenced 7-part battery. Each test isolates specific neurological pathways and collects granular performance telemetry:
 
-### 1. Mood Questionnaire
-* **Description & Rules:** A baseline lifestyle, sleep, and emotional health survey where users log their daily affective tone, circadian habits, and subjective stress levels.
-* **Purpose:** Establishes the foundational contextual baseline for physiological and emotional well-being before active cognitive testing.
-* **Data Collected:** Self-reported sleep duration, subjective stress scores, energy levels, and mood valence.
-* **Health Prediction & Research Reference:** Sleep hygiene and affective baseline heavily modulate prefrontal cortex executive functioning. 
-  * *Reference:* Walker, M. P. (2017). *Why We Sleep: Unlocking the Power of Sleep and Dreams*. Scribner. (Correlates sleep deprivation directly with impaired cognitive latency and emotional reactivity).
 
-### 2. Stroop Test
-* **Description & Rules:** The classic cognitive interference paradigm. Color words (e.g., "RED") are displayed in conflicting ink colors (e.g., green). Users must select the *ink color* while actively suppressing the automatic instinct to read the word.
-* **Purpose:** Measures cognitive interference, selective attention, and executive inhibition control.
-* **Data Collected:** Reaction latency in congruent vs. incongruent trials, error rate, and emotional resilience under cognitive friction.
-* **Health Prediction & Research Reference:** Deficits in Stroop interference control serve as a key marker for executive dysfunction, chronic stress, and attention-deficit patterns.
-  * *Reference:* Stroop, J. R. (1935). *Studies of interference in serial verbal reactions*. Journal of Experimental Psychology, 18(6), 643–662.
 
-### 3. Memory Card (Card Matching)
-* **Description & Rules:** A visual-spatial working memory grid where cards are briefly shown and flipped face down. Users must match pairs within minimal moves and time limits.
-* **Purpose:** Evaluates visual working memory capacity, pattern retention speed, and short-term memory consolidation.
-* **Data Collected:** Total moves, elapsed time to complete matches, and accuracy percentage.
-* **Health Prediction & Research Reference:** Working memory span is closely linked to hippocampal health and fluid intelligence. 
-  * *Reference:* Baddeley, A. (1992). *Working memory*. Science, 255(5044), 556–559.
 
-### 4. Pattern Memory
-* **Description & Rules:** A grid-based sequence memory challenge where an escalating pattern of tiles illuminates, requiring the user to replicate the sequence accurately from memory.
-* **Purpose:** Assesses visuospatial span and sequential working memory load.
-* **Data Collected:** Maximum sequence level reached, correct sequential inputs, and error count.
-* **Health Prediction & Research Reference:** Visuospatial sequencing tracking provides insights into frontal-parietal network efficiency.
-  * *Reference:* Funahashi, S. (2017). *Working memory in the prefrontal cortex*. Brain Sciences, 7(5), 49.
 
-### 5. Click Accuracy
-* **Description & Rules:** Moving or appearing targets flash randomly across the viewport; users must react and click them with high precision within a strict time frame.
-* **Purpose:** Measures fine motor control, hand-eye coordination, and spatial impulse precision.
-* **Data Collected:** Click coordinates deviation from target center, missed clicks, and average precision delta.
-* **Health Prediction & Research Reference:** Psychomotor coordination degradation correlates with fatigue, neurological stress, and psychomotor slowing.
-  * *Reference:* Schmidt, R. A., & Lee, T. D. (2011). *Motor Control and Learning: A Behavioral Emphasis*. Human Kinetics.
 
-### 6. Reaction Test
-* **Description & Rules:** Simple and choice reaction time measurement. The screen shifts color unpredictably, and the user must press/click as fast as possible upon stimulus onset.
-* **Purpose:** Quantifies basic processing speed and central nervous system transmission latency.
-* **Data Collected:** Millisecond (ms) response latency across multiple trials.
-* **Health Prediction & Research Reference:** Reaction time is a robust biomarker of central nervous system vitality, alertness, and central processing efficiency.
-  * *Reference:* Jensen, A. R. (2006). *Clocking the Mind: Mental Chronometry and Individual Differences*. Elsevier.
 
-### 7. Visual Preference
-* **Description & Rules:** A psychological preference matrix presenting balancing aesthetic patterns, tonal stimuli, or risk-reward scenarios to map emotional and risk tendencies.
-* **Purpose:** Evaluates risk propensity, aesthetic engagement, and emotional regulation preferences.
-* **Data Collected:** Choice selections categorized against risk tolerance and coping strategies.
-* **Health Prediction & Research Reference:** Behavioral preference profiling correlates with personality traits (Big Five) and stress resilience schemas.
-  * *Reference:* Tversky, A., & Kahneman, D. (1992). *Advances in prospect theory: Cumulative representation of uncertainty*. Journal of Risk and Uncertainty, 5(4), 297–323.
+
+Activiy 01
+
+### **1. Description / How it's played**
+
+* Users report their current emotional state by selecting an emoji.
+* They rate their **energy level** (1–5) and **perceived stress level** (1–5).
+* Responses are recorded before cognitive assessments begin.
+
+### **2. Purpose**
+
+* Capture the participant's current emotional state.
+* Assess self-perceived energy and stress.
+* Provide baseline psychological data before cognitive testing.
+
+### **3. What it measures**
+
+* Current mood (emoji selection).
+* Self-reported energy level.
+* Self-reported stress level.
+* Overall emotional well-being before testing.
+
+### **4. How it predicts health**
+
+* Helps identify symptoms associated with stress, anxiety, depression, burnout, and emotional distress.
+* High stress with low energy may indicate increased psychological burden.
+* When combined with cognitive task performance, it supports early screening and monitoring of mental health changes.
+
+### **References**
+
+* Kroenke K, Spitzer RL, Williams JBW. (2001). *The PHQ-9: Validity of a Brief Depression Severity Measure.* [https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/211099](https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/211099)
+* Spitzer RL, Kroenke K, Williams JBW, Löwe B. (2006). *The GAD-7 Anxiety Scale.* [https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/410326](https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/410326)
+* WHO. *Mental Health.* [https://www.who.int/health-topics/mental-health](https://www.who.int/health-topics/mental-health)
+* National Institute of Mental Health (NIMH). [https://www.nimh.nih.gov/health/topics](https://www.nimh.nih.gov/health/topics)
+
+
+activity 2
+
+
+### **1. Description / How it's played**
+
+* Players identify the **color of the text**, not the word itself.
+* Each round displays a color word in an incongruent ink color.
+* Players select the correct ink color as quickly and accurately as possible.
+* The test consists of 10 rounds.
+
+### **2. Purpose**
+
+* Assess selective attention and cognitive control.
+* Evaluate inhibitory control and response inhibition.
+* Measure processing speed under cognitive interference.
+
+### **3. What it measures**
+
+* Correct responses (accuracy).
+* Response time (reaction latency).
+* Number of errors.
+* Average response time across all rounds.
+
+### **4. How it predicts health**
+
+* Poor accuracy and slower response times may indicate deficits in attention, executive functioning, processing speed, or cognitive flexibility.
+* Stroop performance has been widely used to assess cognitive impairment associated with ADHD, anxiety, depression, mild cognitive impairment (MCI), dementia, traumatic brain injury, and other neurological disorders.
+* Combined with other cognitive assessments, it supports early screening and monitoring of cognitive and mental health changes.
+
+### **References**
+
+* Stroop JR. (1935). *Studies of Interference in Serial Verbal Reactions.* [https://psychclassics.yorku.ca/Stroop/](https://psychclassics.yorku.ca/Stroop/)
+* Scarpina F, Tagini S. (2017). *The Stroop Color and Word Test.* [https://www.frontiersin.org/articles/10.3389/fpsyg.2017.00557/full](https://www.frontiersin.org/articles/10.3389/fpsyg.2017.00557/full)
+* MacLeod CM. (1991). *Half a Century of Research on the Stroop Effect.* [https://psycnet.apa.org/record/1991-27969-001](https://psycnet.apa.org/record/1991-27969-001)
+* National Institute of Mental Health (NIMH). [https://www.nimh.nih.gov/health/topics](https://www.nimh.nih.gov/health/topics)
+
+
+### Activity 3 
+### **1. Description / How it's played**
+
+* Players flip two cards at a time to find matching emoji pairs.
+* Matched pairs remain visible, while incorrect pairs are flipped back.
+* The game progresses through three increasing difficulty levels with more card pairs.
+
+### **2. Purpose**
+
+* Assess short-term and working memory.
+* Evaluate visual memory and pattern recognition.
+* Measure attention, recall speed, and learning efficiency.
+
+### **3. What it measures**
+
+* Memory accuracy (matched pairs vs. mistakes).
+* Total completion time.
+* Average response latency between moves.
+* Number of mistakes.
+* Performance across increasing difficulty levels.
+
+### **4. How it predicts health**
+
+* Poor memory accuracy, slower responses, and frequent mistakes may indicate reduced working memory, attention deficits, cognitive fatigue, or executive dysfunction.
+* Memory matching tasks are commonly used to assess cognitive decline associated with Mild Cognitive Impairment (MCI), Alzheimer's disease, ADHD, depression, and other neurological conditions.
+* Combined with other cognitive assessments, these measures support early screening and monitoring of cognitive and mental health.
+
+### **References**
+
+* Baddeley AD. (1992). *Working Memory.* [https://www.science.org/doi/10.1126/science.1736359](https://www.science.org/doi/10.1126/science.1736359)
+* Petersen RC. (2004). *Mild Cognitive Impairment as a Diagnostic Entity.* [https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/217514](https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/217514)
+* Alzheimer's Association. *10 Early Signs and Symptoms of Alzheimer's.* [https://www.alz.org/alzheimers-dementia/10_signs](https://www.alz.org/alzheimers-dementia/10_signs)
+* National Institute on Aging. *Cognitive Health and Older Adults.* [https://www.nia.nih.gov/health/cognitive-health-and-older-adults](https://www.nia.nih.gov/health/cognitive-health-and-older-adults)
+
+
+activity 4 
+### **1. Description / How it's played**
+
+* Players watch a sequence of highlighted tiles and repeat the pattern from memory.
+* Each successful round adds one more tile to the sequence.
+* The game ends when an incorrect tile is selected.
+
+### **2. Purpose**
+
+* Assess visual sequential memory and working memory.
+* Evaluate attention, learning ability, and recall under increasing difficulty.
+* Measure the ability to retain and reproduce visual patterns.
+
+### **3. What it measures**
+
+* Rounds completed.
+* Maximum sequence length remembered.
+* Visual memory capacity.
+* Sequential recall accuracy.
+* Learning performance across increasing difficulty.
+
+### **4. How it predicts health**
+
+* Lower sequence recall and shorter memory span may indicate impairments in working memory, attention, or executive functioning.
+* Pattern memory tasks are widely used to assess cognitive performance in individuals with ADHD, Mild Cognitive Impairment (MCI), Alzheimer's disease, traumatic brain injury, and other neurological conditions.
+* Combined with other cognitive assessments, these measures support early screening and monitoring of cognitive decline and mental health changes.
+
+### **References**
+
+* Baddeley AD. (1992). *Working Memory.* [https://www.science.org/doi/10.1126/science.1736359](https://www.science.org/doi/10.1126/science.1736359)
+* Corsi PM. (1972). *Human Memory and the Medial Temporal Region.* [https://books.google.com/books?id=TGYoAQAAMAAJ](https://books.google.com/books?id=TGYoAQAAMAAJ)
+* Petersen RC. (2004). *Mild Cognitive Impairment as a Diagnostic Entity.* [https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/217514](https://jamanetwork.com/journals/jamainternalmedicine/fullarticle/217514)
+* National Institute on Aging. *Cognitive Health and Older Adults.* [https://www.nia.nih.gov/health/cognitive-health-and-older-adults](https://www.nia.nih.gov/health/cognitive-health-and-older-adults)
+
+activity 5
+### **1. Description / How it's played**
+
+* Click moving targets while avoiding red danger balls.
+* Difficulty increases with faster movement, smaller targets, and more distractions.
+* Hits, misses, and penalties are recorded throughout the game.
+
+### **2. Purpose**
+
+* Assess visual attention and concentration.
+* Evaluate hand-eye coordination and motor control.
+* Measure reaction efficiency under increasing cognitive load.
+
+### **3. What it measures**
+
+* Number of target hits.
+* Number of missed clicks.
+* Penalty clicks (danger balls).
+* Overall click accuracy.
+* Performance across multiple difficulty levels.
+
+### **4. How it predicts health**
+
+* Provides **digital behavioral biomarkers** of cognitive performance.
+* Lower accuracy and more errors may indicate reduced attention, cognitive fatigue, slower psychomotor speed, or executive dysfunction.
+* Combined with other cognitive tasks, it can support early screening of anxiety, depression, ADHD, mild cognitive impairment, and other neurological or mental health conditions.
+
+### **References**
+
+* Insel TR. (2017). *Digital Phenotyping: Technology for a New Science of Behavior.* [https://jamanetwork.com/journals/jama/fullarticle/2666502](https://jamanetwork.com/journals/jama/fullarticle/2666502)
+* Dagum P. (2018). *Digital Biomarkers of Cognitive Function.* [https://www.nature.com/articles/d42473-018-00044-7](https://www.nature.com/articles/d42473-018-00044-7)
+* Mohr DC et al. (2017). *The Behavioral Intervention Technology Model.* [https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5214270/](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5214270/)
+
+
+### **1. Description / How it's played**
+
+* Players complete **5 reaction time trials**.
+* Wait for the box to turn **green**, then click as quickly as possible.
+* Clicking before the green signal counts as a **false start**.
+
+### **2. Purpose**
+
+* Assess psychomotor speed and sustained attention.
+* Evaluate response inhibition and impulsivity.
+* Measure consistency of reaction performance across multiple trials.
+
+### **3. What it measures**
+
+* Average reaction time.
+* Fastest reaction time.
+* Reaction time consistency (standard deviation).
+* Number of false starts (impulsive responses).
+
+### **4. How it predicts health**
+
+* Slower or inconsistent reaction times may indicate reduced attention, fatigue, stress, cognitive impairment, or neurological dysfunction.
+* Frequent false starts can reflect impulsivity and reduced inhibitory control, commonly observed in ADHD and other executive function disorders.
+* Reaction time testing is widely used for early cognitive screening and monitoring mental and neurological health. **This assessment is intended for screening, not diagnosis.**
+
+### **References**
+
+* Deary IJ, Liewald D, Nissan J. (2011). *A Free, Easy-To-Use, Computer-Based Simple and Four-Choice Reaction Time Programme.* [https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0026139](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0026139)
+* Salthouse TA. (2000). *Aging and Measures of Processing Speed.* [https://psycnet.apa.org/record/2000-13352-001](https://psycnet.apa.org/record/2000-13352-001)
+* Woods DL, Wyma JM, Yund EW, Herron TJ, Reed B. (2015). *Factors Influencing the Latency of Simple Reaction Time.* [https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4456887/](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4456887/)
+* National Institute of Neurological Disorders and Stroke (NINDS). [https://www.ninds.nih.gov/](https://www.ninds.nih.gov/)
+
+
+### **1. Description / How it's played**
+
+* Players select **9 images** that they find most visually appealing or emotionally resonant.
+* Each selected image is replaced with a new one until all selections are completed.
+* The system analyzes the emotional categories of the selected images.
+
+### **2. Purpose**
+
+* Assess emotional preference and affective bias.
+* Evaluate emotional tendencies through visual choices.
+* Identify dominant emotional patterns and current emotional state.
+
+### **3. What it measures**
+
+* Number of selections for each emotion category (Happy, Calm, Neutral, Sad, Angry).
+* Dominant emotional preference.
+* Emotional distribution across all selections.
+* Emotional resilience score.
+
+### **4. How it predicts health**
+
+* Visual preference tasks can reveal **affective bias**, which is associated with emotional processing and mental well-being.
+* A strong preference for negative emotional imagery may be associated with elevated stress, anxiety, or depressive symptoms, while preference for positive or calming images may reflect better emotional well-being.
+* When combined with cognitive assessments, these patterns can support early screening and monitoring of emotional and psychological health. **This assessment is intended for screening, not diagnosis.**
+
+### **References**
+
+* Leppänen JM. (2006). *Emotional Information Processing in Mood Disorders.* [https://pubmed.ncbi.nlm.nih.gov/17145174/](https://pubmed.ncbi.nlm.nih.gov/17145174/)
+* Elliott R, Rubinsztein JS, Sahakian BJ, Dolan RJ. (2002). *The Neural Basis of Mood-Congruent Processing Biases.* [https://pubmed.ncbi.nlm.nih.gov/12457760/](https://pubmed.ncbi.nlm.nih.gov/12457760/)
+* Beck AT. (1976). *Cognitive Therapy and the Emotional Disorders.* [https://books.google.com/books?id=fKaHAAAAMAAJ](https://books.google.com/books?id=fKaHAAAAMAAJ)
+* National Institute of Mental Health (NIMH). [https://www.nimh.nih.gov/health/topics/depression](https://www.nimh.nih.gov/health/topics/depression)
+
 
 ---
 
